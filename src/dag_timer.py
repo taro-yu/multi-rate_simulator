@@ -22,7 +22,7 @@ class Node:
         self._ft = None
         self._st = None
         self._core_use = None
-        self._core_parallel_num = 1
+        self._require_core_num = 1
         self._core = []
         self._laxity = laxity
         self._k = k_parallel / 10
@@ -45,11 +45,23 @@ class Node:
         # timer_driven_nodeかの判定フラグ
         self._timer_flag = timer_flag
 
-        # どのコアを確保したかの情報を保存しておく
-        self._core_tmp = []
+        # 何番目のジョブか
+        self._activate_num = 1
 
-        #何番目のジョブか
-        # self._activate_num = 1
+        #前に確保したコアの情報を保存
+        self._allocated_cores = []
+    @property
+    def allocated_cores(self) -> list:
+        return self._allocated_cores
+    
+    @allocated_cores.setter
+    def allocated_cores(self, core_id:int):
+        self._allocated_cores.append(core_id)
+
+    
+    def allocated_cores_clear(self):
+        self._allocated_cores.clear()
+    
     @property
     def remain_ex_time(self)->int:
         return self._remain_ex_time
@@ -58,17 +70,6 @@ class Node:
     def remain_ex_time(self, n:int):
         self._remain_ex_time += n
 
-    @property
-    def core_tmp(self):
-        return self._core_tmp
-    
-    @core_tmp.setter
-    def core_tmp(self, core_id: int):
-        self._core_tmp.append(core_id)
-
-
-    def core_tmp_clear(self):
-        self._core_tmp.clear()
 
 
     @property
@@ -125,12 +126,12 @@ class Node:
         self._core.append(n)
 
     @property
-    def core_parallel_num(self):
-        return self._core_parallel_num
+    def require_core_num(self):
+        return self._require_core_num
     
-    @core_parallel_num.setter
-    def core_parallel_num(self, n: int):
-        self._core_parallel_num = n
+    @require_core_num.setter
+    def require_core_num(self, n: int):
+        self._require_core_num = n
 
     @property
     def core_use(self) -> Optional[int]:
