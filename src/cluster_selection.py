@@ -1,11 +1,11 @@
 from itertools import combinations
-from dag_timer import DAG
+from .dag_timer import DAG
 
 import copy
 
 class ClusterSlectionMethods():
     
-    def __init__():
+    def __init__(self):
         pass
 
     # クラスタ選択を行う
@@ -18,6 +18,7 @@ class ClusterSlectionMethods():
             cluster_remain_available: list[list[bool]],
             method_name: str #proposed, greedy, best, EFT
     ) -> int | list[int] | None:
+        # print("at select_cluster: node_id="+str(node_id))
         
         # ガード節
         if require_core_num > sum(cluster_remain_cores):
@@ -83,7 +84,7 @@ class ClusterSlectionMethods():
             pre_nodes_cluster_list =[]
             for pre_node in dag.predecessors(node_id):
                 for core_id in dag.nodes[pre_node].allocated_cores:
-                    cluster_id, _ = self._calc_cluster_index(core_id)
+                    cluster_id, _ = self._calc_cluster_index(core_id, parameters)
                     if len(pre_nodes_cluster_list) == 0:
                         pre_nodes_cluster_list.append(cluster_id)
                     elif cluster_id not in pre_nodes_cluster_list:
@@ -92,7 +93,7 @@ class ClusterSlectionMethods():
             if len(pre_nodes_cluster_list) == 1:
                 cluster_id = pre_nodes_cluster_list[0]
                 if require_core_num <= cluster_remain_cores[cluster_id]:
-                    return list(cluster_id)
+                    return [cluster_id]
                 
             # 後続にタイマノードがある場合、それが使っているクラスタが空いてるか調べる
             elif len(dag.successors(node_id)) != 0:
@@ -100,9 +101,9 @@ class ClusterSlectionMethods():
                     if dag.nodes[succ_id].timer_flag is True:
                         # タイマノードは一つ割り当てられている
                         core_id = dag.nodes[succ_id].allocated_cores[0]
-                        cluster_id = self._calc_cluster_index(core_id)
+                        cluster_id, _ = self._calc_cluster_index(core_id, parameters)
                         if require_core_num <= cluster_remain_cores[cluster_id]:
-                            return list(cluster_id)
+                            return [cluster_id]
 
         return None
     
@@ -147,7 +148,7 @@ class ClusterSlectionMethods():
                 min_core_num = remain_core_num
                 best_cluster_id = cluster_id
         if best_cluster_id != -1:
-            return list(best_cluster_id)
+            return [best_cluster_id]
         
     def _comb_fit(
         self,
@@ -159,10 +160,10 @@ class ClusterSlectionMethods():
         min_length = float('inf')
         min_combination = None
         selected_cluster_ids = []
-        cluster_remain_cores_copy = copy.deepcopy(cluster_remain_cores)
+        # cluster_remain_cores_copy = copy.deepcopy(cluster_remain_cores)
 
-        for r in range(1, len(cluster_remain_cores_copy)+1):
-            for combination in combinations(cluster_remain_cores_copy, r):
+        for r in range(1, len(cluster_remain_cores)+1):
+            for combination in combinations(cluster_remain_cores, r):
                 if sum(combination) == require_core_num and len(combination) < min_length:
                     min_length = len(combination)
                     min_combination = combination
@@ -171,7 +172,7 @@ class ClusterSlectionMethods():
             return min_combination
         else:
             for n in min_combination:
-                for id, c in enumerate(cluster_remain_cores_copy):
+                for id, c in enumerate(cluster_remain_cores):
                     if n == c and id not in selected_cluster_ids:
                         selected_cluster_ids.append(id)
             return selected_cluster_ids
@@ -228,6 +229,7 @@ class ClusterSlectionMethods():
         self,
         parameters: list[DAG|int|list]
     ):
+
         require_core_num = parameters[2]
         cluster_remain_cores = parameters[3]
 

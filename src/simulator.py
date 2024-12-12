@@ -1,7 +1,7 @@
 from numpy import argmin, argmax
-from dag_timer import DAG, Node
+from .dag_timer import DAG, Node
 from itertools import combinations
-from cluster_selection import ClusterSlectionMethods
+from .cluster_selection import ClusterSlectionMethods
 import math, copy, random
 
 class Simulator():
@@ -12,7 +12,7 @@ class Simulator():
             cluster_num: int,
             cluster_core_num: int,
             cluster_comm_ratio: float,
-            selection_method_name: str, # proposed, greedy, best, EFT
+            method_name: str, # proposed, greedy, best, EFT
             heavy_task_num: int | None = None,
     ):
         # 基本パラメータ
@@ -21,9 +21,10 @@ class Simulator():
         self._cluster_core_num = cluster_core_num
         self._cluster_comm_ratio = cluster_comm_ratio
         self._cluster_comm_time = 1 * self._cluster_comm_ratio
+        self._method_name = method_name
         self._heavy_task_num = heavy_task_num
-        self._selection_method_name = selection_method_name
-        self._cluser_remain_cores = [self._cluster_core_num for n in range(self._cluster_num)]
+        self._method_name = method_name
+        self._cluster_remain_cores = [self._cluster_core_num for n in range(self._cluster_num)]
         self._cluster_remain_available = [[True for n in range(self._cluster_core_num)] for l in range(self._cluster_num) ]
 
         # クラスタ間通信の回数記録用
@@ -38,26 +39,11 @@ class Simulator():
 
         #シミュレーション経過時間
         self._sim_time = 0
-
-
-    #使用できるコアをheavy_task_num個に分けて、heavy_task_num個のタスクのparalle_numに設定する
-    #均等に分けられない場合（余りが出る場合）、余った分を一つづつ選ばれたタスクに追加していく
-    #例：72コアを5つのタスクに割り当てる場合、[16, 16, 15, 15, 15]となる
-    def _decide_require_core_num_heavy(self, heavy_task_num):
-        pass
-
-    #2~5コアをタイマノード以外のすべてに割り当てる
-    def _decide_require_core_num_light(self):
-        pass
-
-
     
-
     # main関数
     def Scheduling(
             self,
-            dag_number, 
-            method_name: str,
+            # dag_number, 
             task_name: str = "heavy" #"heavy" or "light"
         ):
         
@@ -67,7 +53,7 @@ class Simulator():
         elif task_name == "light":
             self._decide_require_core_num_light()
 
-        self._simulator(method_name)
+        self._simulator(self._method_name)
 
         return
         
@@ -78,7 +64,8 @@ class Simulator():
         self,
         method_name
     ):
-        HP = self._dag_calc_HP
+        HP = self._dag._calc_HP()
+        self._dag._allocate_period_from_src()
         cluster_selector = ClusterSlectionMethods()
         
         # タイマーノードを一か所に集めておく+初めに実行できるジョブを生成
@@ -88,106 +75,127 @@ class Simulator():
                 self._wait_queue.append(self._dag.make_new_job(node))
         
         # 途中のタイマノードに専用コアを割り当てる
-        for timer_job in self._wait_queue:
-            if timer_job.id not in self._dag.src:
+        for timer_node in self._timer_nodes:
+            if timer_node.id not in self._dag.src:
                 for cluster_id in range(self._cluster_num):
                     for cluster_core_id, core_flag in enumerate(self._cluster_remain_available[cluster_id]):
                         if core_flag is True:
                             core_id = self._calc_core_id(cluster_id, cluster_core_id)
-                            timer_job.core(core_id)
-                            self._dag.nodes[timer_job.id].allocated_cores(core_id)
+                            timer_node.allocated_cores = core_id
                             self._cluster_remain_available[cluster_id][cluster_core_id] = False
-                            self._cluser_remain_cores[cluster_id] -= 1
+                            self._cluster_remain_cores[cluster_id] -= 1
                             break
-                    if len(timer_job.core) != 0:
+                    if len(timer_node.allocated_cores) != 0:
                         break
-            
-
-
-
 
         # シミュレーション開始
         while self._sim_time <= HP:
+            # if self._sim_time < 100:
+            # print("sim_time="+str(self._sim_time))
 
             # 実行が完了したノードの対応
-            for list_id, ex_job in enumerate(self._execution_list):
-                if ex_job.finish is True: 
-                    
-                    if ex_job.timer_flag is True or ex_job.id not in self._dag.src:
+            ex_to_wait_jobs = []
+            for ex_list_id, ex_job in enumerate(self._execution_list):
+                # print("job_id = "+str(ex_job.id)+" ex_job.c = "+ str(ex_job.c))
+
+                if ex_job.finish is True:
+                    ex_to_wait_jobs.append(ex_list_id)
+                    if ex_job.timer_flag is True and ex_job.id not in self._dag.src:
                         pass #途中のタイマノードならコアを解放しない
                     else:
                         self._release_cores(ex_job)
-                    self._execution_list.pop(list_id)
                     # 後続ノードの中で実行可能となったものを待ちキューに追加
-                    if self._dag.successors(ex_job.id) is not None:
+                    if len(self._dag.successors(ex_job.id)) != 0:
                         for succ in self._dag.successors(ex_job.id):
                             if self._dag.nodes[succ].trigger_edge != ex_job.id:
                                 continue
                             else:
                                 self._wait_queue.append(self._dag.make_new_job(self._dag.nodes[succ]))
+            self._execution_list = [job for id, job in enumerate(self._execution_list) \
+                                                                    if id not in ex_to_wait_jobs]
 
 
             # タイマノードの周期が来ていたらジョブを追加
             if self._sim_time != 0:
                 for timer_node in self._timer_nodes:
-                    if timer_node.period % self._sim_time == 0:
-                        timer_node.activate_num(1)
+                    if self._sim_time % timer_node.period == 0:
+                        timer_node.activate_num = 1
                         self._wait_queue.append(self._dag.make_new_job(timer_node))
             
             # 待ちキューをlaxityの値でソート
             self._wait_queue.sort(key=lambda x: x.laxity)
+            # if self._sim_time < 100:
+            # for job in self._wait_queue:
+            #     print("wait_job = "+str(job.id))
+            # print("remain_cores="+str(self._cluster_remain_cores))
+
+            # if self._sim_time < 100:
+            # for ex_job in self._execution_list:
+            #     print("ex_job = "+str(ex_job.id)+"remain_ex_time = "+str(ex_job.c))
 
             # 実行可能なものを実行
+            wait_to_ex_job = 0
             for wait_job in self._wait_queue:
-                if wait_job.require_core_num > sum(self._cluser_remain_cores):
+                if wait_job.require_core_num > sum(self._cluster_remain_cores):
+                    # print("req="+str(wait_job.require_core_num)+"sum = "+str(sum(self._cluster_remain_cores)))
                     break
                 else:
                     # クラスタを選択
                     
                     if wait_job.timer_flag is True and wait_job.id not in self._dag.src:
                     # 途中のタイマノード
-                        selected_clusters = []
-                        selected_clusters.append(self._dag.nodes[wait_job.id].allocated_cores[0])
+                        wait_job.core = self._dag.nodes[wait_job.id].allocated_cores[0]
                     else:
                     # それ以外
                         selected_clusters = cluster_selector.select_clusters( # 別ファイルで定義
-                                                                method_name,
                                                                 self._dag,
                                                                 wait_job.id,
                                                                 wait_job.require_core_num,
-                                                                self._cluster_core_num,
-                                                                self._cluster_remain_available
+                                                                self._cluster_remain_cores,
+                                                                self._cluster_remain_available,
+                                                                method_name
                                                             ) 
-                    assert selected_clusters != None
+                        assert selected_clusters != None
+                        # if len(selected_clusters) != 1:
+                        #     print("req_core="+str(wait_job.require_core_num)+"selected_c="+str(selected_clusters)+", remain_cores="+str(self._cluster_remain_cores))
 
                     # コアの確保
-                    allocate_count = 0
-                    for cluster_id in selected_clusters:
-                        for cluster_core_id, core_flag in enumerate(self._cluster_remain_available[cluster_id]):
-                            if core_flag is True and allocate_count != wait_job.require_core_num:
-                                core_id = self._calc_core_id(cluster_id, cluster_core_id)
-                                wait_job.core(core_id)
-                                self._cluster_core_num[cluster_id] -= 1
-                                self._cluster_remain_available[cluster_id][cluster_core_id] = False
-
-                    # 並列処理によるwcetの変化
-                    if len(wait_job.core) >= 2:
-                        self._new_wcet(wait_job)
- 
+                        # print("req_core="+str(wait_job.require_core_num)+", before_cores="+str(self._cluster_remain_cores))
+                        allocate_count = 0
+                        for cluster_id in selected_clusters:
+                            for cluster_core_id, core_flag in enumerate(self._cluster_remain_available[cluster_id]):
+                                if core_flag is True and allocate_count != wait_job.require_core_num:
+                                    core_id = self._calc_core_id(cluster_id, cluster_core_id)
+                                    wait_job.core = core_id
+                                    self._cluster_remain_cores[cluster_id] -= 1
+                                    self._cluster_remain_available[cluster_id][cluster_core_id] = False
+                                    allocate_count += 1
+                        # 並列処理によるwcetの変化
+                        if len(wait_job.core) >= 2:
+                            self._new_wcet(wait_job)
+                        # print("after_cores="+str(self._cluster_remain_cores))
+    
                     # クラスタ間通信の時間を追加 (job.cにcomm_timeを追加するため、self._new_wcetよりも後に実行)
                     self._add_cc_comm_time(wait_job)
                     
-                    # 実行中リストに追加
+                    # 実行中リストに追加 & waitキューから除外
                     self._execution_list.append(wait_job)
+                    wait_to_ex_job += 1
+            # wait_queueから実行された分をwait_queueから削除
+            for n in range(wait_to_ex_job):
+                self._wait_queue.pop(0)
+
             
 
             # 時間を一つ進める+残り実行時間をマイナス
             self._sim_time += 1
-            for job_id, ex_job in enumerate(self._execution_list):
-                if ex_job.remain_ex_time - 1 == 0: 
+            for id, ex_job in enumerate(self._execution_list):
+                # if self._sim_time < 10:
+                # print("job_id="+str(ex_job.id)+": remain_ex_time = "+str(ex_job.c))
+                if ex_job.c - 1 == 0: 
                     ex_job.finish = True
                 else:
-                    ex_job.remain_ex_time(-1)
+                    ex_job.c = -1
      
 
     def _release_cores(self, ex_job: Node):
@@ -195,14 +203,14 @@ class Simulator():
         for core in ex_job.core:
             cluster_id, cluster_core_id = self._calc_cluster_index(core)
             self._cluster_remain_available[cluster_id][cluster_core_id] = True
-            self._cluster_remain_core[cluster_id] += 1
-            self._dag.nodes[ex_job.id].allocated_cores(core)
+            self._cluster_remain_cores[cluster_id] += 1
+            self._dag.nodes[ex_job.id].allocated_cores = core
 
         # errorチェック
         sum_available = 0
         for cluster_id in range(self._cluster_num):
             sum_available += self._cluster_remain_available[cluster_id].count(True)
-        assert sum(self._cluster_remain_core) == sum_available
+        assert sum(self._cluster_remain_cores) == sum_available
 
 
 
@@ -240,27 +248,31 @@ class Simulator():
                 self._total_inter_cc_cost += self._cluster_comm_time
         
         # ノード内
-        if len(job.id.core) > 1:
+        if len(job.core) > 1:
             for core_id in job.core:
-                cluster_id = int(core_id / self._cluster_num)
+                cluster_id = int(core_id / self._cluster_core_num)
                 if len(cc_list) == 0:
                     cc_list.append(cluster_id)
                 elif cluster_id not in cc_list:
                     cc_list.append(cluster_id)
+            
             cc_cost = (len(cc_list) -1 ) * self._cluster_comm_time
             if len(cc_list) > 1:
                 intra_node_flag = True
         
         self._total_intra_cc_cost += cc_cost
+        # print("cc_cost="+str(cc_cost))
 
         if inter_node_frag is True and intra_node_flag is True:
-            job.c += self._cluster_comm_time + cc_cost
+            job.c = self._cluster_comm_time + cc_cost
             # print("cost1="+str(self._cc_comm_time + cc_cost))
         elif inter_node_frag is True and intra_node_flag is False:
-            job.c += self._cluster_comm_time
+            job.c = self._cluster_comm_time
             # print("cost2="+str(self._cc_comm_time))
         elif inter_node_frag is False and intra_node_flag is True:
-            job.c += cc_cost
+            job.c = cc_cost
+
+        
             # print("cost3="+str(cc_cost))
 
         
@@ -272,6 +284,7 @@ class Simulator():
         base_wcet = job.c
         K = job.k
         N = len(job.core)
+
     
         #与えられたコア数で並列処理すると、もとのWCETが何倍速になるのかをアムダールの式で計算
         assert N != 0
@@ -281,11 +294,33 @@ class Simulator():
         #len(self._dag.nodes[node_index].core) <= core_num) 
         #up_speedをもとに、速くなったWCETを求め、値を更新
         # if self._dag.nodes[node_index].c > math.ceil(base_wcet / up_speed):
-        job.c = math.ceil(base_wcet / speed_up)
+        job.set_new_wcet(math.ceil(base_wcet / speed_up))
 
     
                 
     
+
+    #使用できるコアをheavy_task_num個に分けて、heavy_task_num個のタスクのparalle_numに設定する
+    #均等に分けられない場合（余りが出る場合）、余った分を一つづつ選ばれたタスクに追加していく
+    #例：72コアを5つのタスクに割り当てる場合、[16, 16, 15, 15, 15]となる
+    def _decide_require_core_num_heavy(self, heavy_task_num):
+        pass
+
+    #2~5コアをタイマノード以外のすべてに割り当てる
+    def _decide_require_core_num_light(self):
+        seed = 0
+        # print("num_of_timer = "+str(self._dag.num_of_timer))
+        for node in self._dag.nodes:
+
+            #ガード節（入口以外のタイマノードなら次のループへ）
+            if node.id not in self._dag.src and node.timer_flag is True:
+                continue
+
+            random.seed(seed)
+            require_core_num = random.randint(1, 9) 
+            node.require_core_num = require_core_num
+            seed += 1
+
 
 
 

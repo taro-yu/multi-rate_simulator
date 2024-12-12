@@ -12,6 +12,7 @@ class Node:
         id: int,
         period: int,
         seed: int,
+        require_core_num: int = 1,
         activate_num: int = 1 ,
         trigger_edge: int | None = None,
         timer_flag: bool = False,
@@ -22,10 +23,13 @@ class Node:
         self._ft = None
         self._st = None
         self._core_use = None
-        self._require_core_num = 1
+        self._require_core_num = require_core_num
         self._core = []
         self._laxity = laxity
-        self._k = k_parallel / 10
+        if k_parallel >= 1:
+            self._k = k_parallel / 10
+        else:
+            self._k = k_parallel
         self._finish = False
         self._id = id
         self._p = -1
@@ -50,6 +54,8 @@ class Node:
 
         #前に確保したコアの情報を保存
         self._allocated_cores = []
+    def set_new_wcet(self, new_wcet):
+        self._c = new_wcet
     @property
     def allocated_cores(self) -> list:
         return self._allocated_cores
@@ -86,7 +92,7 @@ class Node:
 
     @c.setter
     def c(self, n: int):
-        self._c = n
+        self._c += n
 
     @property
     def c_base(self) -> int:
@@ -524,15 +530,17 @@ class DAG:
     
     # 新しいジョブを作成する関数
     def make_new_job(self, node: Node):
-        new_job = Node(node.c, 
-                        node.k,
-                        node.id,
-                        node.period,
-                        node.seed,
-                        activate_num=node.activate_num,
-                        trigger_edge=node.trigger_edge,
-                        timer_flag=node.timer_flag,
-                        laxity=node.laxity+node.period*(node.activate_num-1) 
+        new_job = Node(
+            node.c, 
+            node.k,
+            node.id,
+            node.period,
+            node.seed,
+            require_core_num=node.require_core_num,
+            activate_num=node.activate_num,
+            trigger_edge=node.trigger_edge,
+            timer_flag=node.timer_flag,
+            laxity=node.laxity+node.period*(node.activate_num-1) 
         )
         return new_job
 
