@@ -4,7 +4,7 @@ from src.yaml_dag_reader import YamlDagReader
 
 from src.dag_timer import DAG
 
-from src.simulator import Simulator
+from src.simulator_copy import Simulator
 
 
 
@@ -12,7 +12,7 @@ import networkx
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 1
+dag_num = 200
 frag = 0
 firstR_list = []
 R_list = []
@@ -24,15 +24,15 @@ intra_comm_occur_num = []
 response_times = []
 success_flags = []
 success_ratios = []
-methods = ['EFT']
-methods = ['proposed', 'best', 'greedy', 'EFT']
+# methods = ['EFT']
+# methods = ['proposed', 'best', 'greedy', 'EFT']
+
+# methods = ['proposed']
+# methods = ['best']
+# # methods = ['greedy']
+# methods = ['proposed', 'best']
 
 methods = ['proposed']
-methods = ['best']
-# methods = ['greedy']
-methods = ['proposed', 'best']
-
-# methods = ['best', 'EFT', 'greedy']
 
 deadline_ratios = [0.5, 0.6, 0.7, 0.8]
 cc_time_ratio = 1.0
@@ -53,12 +53,12 @@ sp_node_id = 0
 
 
 deadline_ratio = 0.5
-cluster_nums = [20]
-cluster_total_cores = [80]
+cluster_nums = [5, 8, 10, 20]
+cluster_total_cores = [80, 120, 160]
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'test.txt', 'w') as f:
+    with open(f'result/respo_heavy_{method_name}.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -69,12 +69,13 @@ for method_name in methods:
                 success_flags = []
                 ave_list_respo = []
                 ave_success_ratio = []
-                for m in range(40, 41, 20):
+                for cluster_comm_ratio in range(1, 51, 1):
+                    cluster_comm_ratio *= 0.1
                     for n in range(dag_num):
                         # print(n)
-                        print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        n=162
-                        reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG"+str(m)+"/dag_"+str(n)+".yaml")
+                        print("\rheavy_respo: evaluated "+str(method_name)+" cluster_comm_ration : "+str(cluster_comm_ratio)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
+                        # n=162
+                        reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG80/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
                         # make dag from wcets, edges, deadline
@@ -85,8 +86,8 @@ for method_name in methods:
                         # cluster_num = 5
                         # cluster_core_num = 16
                         # deadline_ratio = 0.8
-                        simulator = Simulator(dag, cluster_num, cluster_core_num, cc_time_ratio, method_name)
-                        ave_response_time = simulator.Scheduling(task_name="light")
+                        simulator = Simulator(dag, cluster_num, cluster_core_num, cluster_comm_ratio=cluster_comm_ratio, method_name=method_name, heavy_task_num=4)
+                        ave_response_time = simulator.Scheduling(task_name="heavy")
 
                         # scheduler = Scheduler2(dag, cluster_num, cluster_core_num, sp_node_id, deadline_ratio, cc_time_ratio, heavy_task_num=4, consider_compute_core=True)
                         # ave_response_time = scheduler.Scheduling(n, task_name="heavy")
@@ -94,7 +95,7 @@ for method_name in methods:
                         #     frag += 1
                         # else:
                         #     print("dag_number = "+str(n))
-                        R_list.append(ave_response_time)
+                        # R_list.append(ave_response_time)
 
                         #今回は率を計算するため、トータルの回数で割っている
                         # print(scheduler._total_comm_within_node)
@@ -108,6 +109,8 @@ for method_name in methods:
                         else:
                             intra_cc_cost.append(simulator._total_intra_cc_cost)
                         inter_cc_cost.append(simulator._total_inter_cc_cost)
+                        
+                        
                         if len(simulator._intra_core_num) == 0:
                             pass
                         else:
@@ -123,19 +126,19 @@ for method_name in methods:
                     # success_ratio = sum(success_flags)/dag_num
                     # ave_list_intra.append(sum(intra_cc_cost) / dag_num)
                     # ave_list_inter.append(sum(inter_cc_cost) / dag_num)
-                    # ave_list_respo.append(sum(R_list) / dag_num)
+                    ave_list_respo.append(sum(response_times) / dag_num)
                     # ave_list_intra.append(sum(intra_cc_cost))
                     # ave_list_inter.append(sum(inter_cc_cost))
                     # ave_success_ratio.append((sum(success_flags) / dag_num))
                     # print("response_time_list = "+str(R_list))
                     # print("response_time_avw = "+str(sum(R_list)/len(R_list)))
                     print("\n")
-                    print("total_inter_comm_ave = "+str(sum(inter_cc_cost) / dag_num))
-                    print("total_intra_comm_ave = "+str(sum(intra_cc_cost) / len(intra_cc_cost)))
-                    print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
-                    # print("intra_comm_occur_num = "+ str(intra_comm_occur_num))
-                    print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
-                    print("max_respo_ave = "+str(sum(response_times) / len(response_times)))
+                    # print("total_inter_comm_ave = "+str(sum(inter_cc_cost) / dag_num))
+                    # print("total_intra_comm_ave = "+str(sum(intra_cc_cost) / len(intra_cc_cost)))
+                    # print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
+                    # # print("intra_comm_occur_num = "+ str(intra_comm_occur_num))
+                    # print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
+                    # print("max_respo_ave = "+str(sum(response_times) / len(response_times)))
 
                     # print("total_inter_comm = "+str(inter_cc_cost))
                     # print("total_intra_comm = "+str(intra_cc_cost))
@@ -156,4 +159,5 @@ for method_name in methods:
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_intra={ave_list_intra}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_success_ratio={ave_list_respo}\n\n")
+                f.write(f"respo_{method_name}_heavy_{cluster_comm_ratio}_{cluster_num}_{cluster_core_num}_respo_ave={ave_list_respo}\n\n")
 

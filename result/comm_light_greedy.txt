@@ -1,0 +1,36 @@
+test_result_4_greedy_light_false_5_16_intra=[1.825, 18.88, 57.305, 115.035, 269.91]
+test_result_4_greedy_light_false_5_16_inter=[276.435, 392.89, 538.99, 602.61, 849.82]
+
+test_result_4_greedy_light_false_5_24_intra=[0.0, 0.155, 1.985, 9.45, 48.14]
+test_result_4_greedy_light_false_5_24_inter=[276.77, 394.715, 539.57, 602.15, 844.505]
+
+test_result_4_greedy_light_false_5_32_intra=[0.0, 0.0, 0.0, 0.265, 2.92]
+test_result_4_greedy_light_false_5_32_inter=[276.77, 394.695, 540.21, 603.365, 847.405]
+
+test_result_4_greedy_light_false_8_10_intra=[6.06, 41.09, 106.02, 200.1, 438.92]
+test_result_4_greedy_light_false_8_10_inter=[284.9, 409.935, 567.325, 637.305, 915.885]
+
+test_result_4_greedy_light_false_8_15_intra=[0.09, 1.34, 7.96, 24.22, 94.07]
+test_result_4_greedy_light_false_8_15_inter=[284.75, 410.325, 565.415, 634.895, 902.335]
+
+test_result_4_greedy_light_false_8_20_intra=[0.0, 0.0, 0.02, 0.88, 6.84]
+test_result_4_greedy_light_false_8_20_inter=[284.755, 410.205, 566.595, 634.695, 906.185]
+
+test_result_4_greedy_light_false_10_8_intra=[57.74, 100.205, 186.635, 294.915, 570.485]
+test_result_4_greedy_light_false_10_8_inter=[286.155, 420.905, 590.61, 666.975, 953.485]
+
+test_result_4_greedy_light_false_10_12_intra=[0.11, 1.935, 11.2, 33.02, 126.415]
+test_result_4_greedy_light_false_10_12_inter=[285.265, 412.505, 566.705, 642.195, 913.49]
+
+test_result_4_greedy_light_false_10_16_intra=[0.0, 0.025, 0.215, 2.305, 14.135]
+test_result_4_greedy_light_false_10_16_inter=[285.245, 412.405, 566.96, 642.63, 916.99]
+
+test_result_4_greedy_light_false_20_4_intra=[260.26, 389.185, 584.53, 746.62, 1208.2]
+test_result_4_greedy_light_false_20_4_inter=[323.63, 476.445, 654.145, 738.175, 1054.15]
+
+test_result_4_greedy_light_false_20_6_intra=[138.435, 201.465, 292.705, 344.22, 565.565]
+test_result_4_greedy_light_false_20_6_inter=[314.815, 462.42, 633.455, 713.485, 1020.695]
+
+test_result_4_greedy_light_false_20_8_intra=[53.875, 69.335, 86.75, 108.73, 161.535]
+test_result_4_greedy_light_false_20_8_inter=[286.99, 423.975, 590.435, 667.865, 949.96]
+

@@ -530,6 +530,7 @@ class DAG:
     
     # 新しいジョブを作成する関数
     def make_new_job(self, node: Node):
+        now_active_num = node.activate_num
         new_job = Node(
             node.c, 
             node.k,
@@ -540,7 +541,7 @@ class DAG:
             activate_num=node.activate_num,
             trigger_edge=node.trigger_edge,
             timer_flag=node.timer_flag,
-            laxity=node.laxity+node.period*(node.activate_num-1) 
+            laxity=node.laxity+node.period*(now_active_num-1) 
         )
         return new_job
 

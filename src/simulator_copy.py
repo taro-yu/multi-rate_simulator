@@ -228,7 +228,7 @@ class Simulator():
             for id, ex_job in enumerate(self._execution_list):
                 # if self._sim_time < 10:
                 # print("job_id="+str(ex_job.id)+": remain_ex_time = "+str(ex_job.c))
-                if ex_job.c - 1 == 0: 
+                if ex_job.c - 1 <= 0: 
                     ex_job.finish = True
                 else:
                     ex_job.c = -1

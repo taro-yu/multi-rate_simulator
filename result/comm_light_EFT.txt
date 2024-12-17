@@ -1,0 +1,36 @@
+test_result_4_EFT_light_false_5_16_intra=[141.125, 242.35, 371.435, 479.855, 771.985]
+test_result_4_EFT_light_false_5_16_inter=[167.435, 295.23, 432.445, 511.895, 783.98]
+
+test_result_4_EFT_light_false_5_24_intra=[71.065, 138.38, 230.8, 300.235, 489.97]
+test_result_4_EFT_light_false_5_24_inter=[105.345, 211.385, 332.185, 411.44, 660.465]
+
+test_result_4_EFT_light_false_5_32_intra=[37.39, 85.115, 150.88, 204.43, 349.715]
+test_result_4_EFT_light_false_5_32_inter=[57.365, 143.48, 247.69, 322.51, 545.525]
+
+test_result_4_EFT_light_false_8_10_intra=[229.06, 379.83, 568.01, 713.9, 1127.615]
+test_result_4_EFT_light_false_8_10_inter=[233.99, 376.69, 528.505, 611.045, 903.805]
+
+test_result_4_EFT_light_false_8_15_intra=[150.47, 257.67, 388.38, 495.11, 772.385]
+test_result_4_EFT_light_false_8_15_inter=[177.84, 307.3, 447.105, 529.425, 810.69]
+
+test_result_4_EFT_light_false_8_20_intra=[99.625, 187.205, 285.26, 365.59, 586.54]
+test_result_4_EFT_light_false_8_20_inter=[133.285, 251.095, 379.2, 461.665, 724.65]
+
+test_result_4_EFT_light_false_10_8_intra=[299.0, 473.185, 696.48, 849.95, 1325.97]
+test_result_4_EFT_light_false_10_8_inter=[267.53, 408.96, 570.58, 651.18, 954.045]
+
+test_result_4_EFT_light_false_10_12_intra=[196.02, 325.71, 483.66, 597.79, 930.425]
+test_result_4_EFT_light_false_10_12_inter=[211.83, 348.81, 496.12, 582.53, 865.66]
+
+test_result_4_EFT_light_false_10_16_intra=[141.195, 241.91, 364.42, 460.56, 727.235]
+test_result_4_EFT_light_false_10_16_inter=[167.445, 296.415, 435.8, 518.13, 794.475]
+
+test_result_4_EFT_light_false_20_4_intra=[553.72, 833.02, 1175.685, 1391.54, 2091.045]
+test_result_4_EFT_light_false_20_4_inter=[319.275, 472.595, 646.325, 730.945, 1046.135]
+
+test_result_4_EFT_light_false_20_6_intra=[377.545, 591.815, 844.29, 1007.39, 1509.865]
+test_result_4_EFT_light_false_20_6_inter=[290.04, 437.79, 603.915, 686.965, 993.275]
+
+test_result_4_EFT_light_false_20_8_intra=[298.945, 469.24, 680.03, 813.615, 1233.12]
+test_result_4_EFT_light_false_20_8_inter=[267.54, 409.15, 570.745, 650.7, 951.95]
+

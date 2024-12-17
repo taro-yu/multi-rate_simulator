@@ -1,0 +1,36 @@
+test_result_4_best_light_false_5_16_intra=[1.405, 13.63, 51.64, 108.995, 284.655]
+test_result_4_best_light_false_5_16_inter=[222.065, 373.06, 524.04, 598.805, 864.295]
+
+test_result_4_best_light_false_5_24_intra=[0.0, 0.12, 0.66, 6.825, 38.315]
+test_result_4_best_light_false_5_24_inter=[144.455, 269.595, 416.295, 507.905, 785.195]
+
+test_result_4_best_light_false_5_32_intra=[0.0, 0.0, 0.0, 0.13, 1.52]
+test_result_4_best_light_false_5_32_inter=[78.41, 183.655, 312.18, 398.595, 653.25]
+
+test_result_4_best_light_false_8_10_intra=[2.455, 26.535, 93.465, 190.705, 487.3]
+test_result_4_best_light_false_8_10_inter=[293.895, 448.81, 610.195, 689.74, 974.225]
+
+test_result_4_best_light_false_8_15_intra=[0.005, 0.46, 3.44, 14.94, 72.295]
+test_result_4_best_light_false_8_15_inter=[238.645, 394.045, 559.545, 648.28, 948.085]
+
+test_result_4_best_light_false_8_20_intra=[0.0, 0.0, 0.0, 0.27, 3.4]
+test_result_4_best_light_false_8_20_inter=[182.265, 327.26, 477.965, 576.115, 865.35]
+
+test_result_4_best_light_false_10_8_intra=[91.145, 152.995, 246.695, 379.605, 731.755]
+test_result_4_best_light_false_10_8_inter=[291.475, 447.79, 617.75, 691.885, 993.27]
+
+test_result_4_best_light_false_10_12_intra=[0.0, 0.295, 5.375, 19.885, 91.71]
+test_result_4_best_light_false_10_12_inter=[274.76, 431.075, 602.865, 696.405, 1004.8]
+
+test_result_4_best_light_false_10_16_intra=[0.0, 0.0, 0.0, 0.75, 5.235]
+test_result_4_best_light_false_10_16_inter=[222.845, 380.215, 542.03, 636.895, 944.495]
+
+test_result_4_best_light_false_20_4_intra=[453.68, 700.87, 1045.2, 1272.315, 1941.195]
+test_result_4_best_light_false_20_4_inter=[320.75, 478.3, 650.165, 735.735, 1050.965]
+
+test_result_4_best_light_false_20_6_intra=[252.53, 410.7, 606.04, 719.115, 1079.5]
+test_result_4_best_light_false_20_6_inter=[307.66, 465.04, 640.24, 720.615, 1038.39]
+
+test_result_4_best_light_false_20_8_intra=[90.425, 139.285, 182.455, 233.655, 323.525]
+test_result_4_best_light_false_20_8_inter=[291.695, 451.725, 629.065, 713.695, 1037.095]
+

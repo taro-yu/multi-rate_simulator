@@ -59,11 +59,12 @@ class ClusterSlectionMethods():
             else:
                 return self._best_fit(parameters)
         else:
-            cluster_ids = self._comb_fit(parameters)
-            if cluster_ids != None:
-                return cluster_ids
+            greedy_ids = self._greedy_fit(parameters)
+            comb_ids = self._comb_fit(parameters, len(greedy_ids))
+            if comb_ids != None and len(comb_ids) <= len(greedy_ids):
+                return comb_ids
             else:
-                return self._greedy_fit(parameters)
+                return greedy_ids
 
 
     
@@ -93,7 +94,11 @@ class ClusterSlectionMethods():
             if len(pre_nodes_cluster_list) == 1:
                 cluster_id = pre_nodes_cluster_list[0]
                 if require_core_num <= cluster_remain_cores[cluster_id]:
+                    # print("pred")
                     return [cluster_id]
+                # else:
+                    # print("can't select pred cluster")
+                    # print("req = "+str(require_core_num)+", remain_pred_cluster_core = "+str(cluster_remain_cores[cluster_id]))
                 
             # 後続にタイマノードがある場合、それが使っているクラスタが空いてるか調べる
             elif len(dag.successors(node_id)) != 0:
@@ -103,6 +108,7 @@ class ClusterSlectionMethods():
                         core_id = dag.nodes[succ_id].allocated_cores[0]
                         cluster_id, _ = self._calc_cluster_index(core_id, parameters)
                         if require_core_num <= cluster_remain_cores[cluster_id]:
+                            # print("pred_timer")
                             return [cluster_id]
 
         return None
@@ -152,9 +158,11 @@ class ClusterSlectionMethods():
         
     def _comb_fit(
         self,
-        parameters: list[DAG|int|list]
-    ) -> tuple[int, ] | None:
+        parameters: list[DAG|int|list],
+        greedy_elem_num: int
+    ) -> tuple | None:
         
+        # print("comb")
         require_core_num = parameters[2]
         cluster_remain_cores = parameters[3]
         min_length = float('inf')
@@ -162,11 +170,15 @@ class ClusterSlectionMethods():
         selected_cluster_ids = []
         # cluster_remain_cores_copy = copy.deepcopy(cluster_remain_cores)
 
-        for r in range(1, len(cluster_remain_cores)+1):
+        for r in range(2, greedy_elem_num+1):
             for combination in combinations(cluster_remain_cores, r):
                 if sum(combination) == require_core_num and len(combination) < min_length:
                     min_length = len(combination)
                     min_combination = combination
+                    # print("comb = "+str(combination))
+                    break
+            if min_combination is not None:
+                break
 
         if min_combination is None:
             return min_combination
@@ -175,6 +187,8 @@ class ClusterSlectionMethods():
                 for id, c in enumerate(cluster_remain_cores):
                     if n == c and id not in selected_cluster_ids:
                         selected_cluster_ids.append(id)
+                        break
+            # print(selected_cluster_ids)
             return selected_cluster_ids
 
         
@@ -204,6 +218,7 @@ class ClusterSlectionMethods():
         self,
         parameters: list[DAG|int|list]
     ):
+        id = parameters[1]
         require_core_num = parameters[2]
         cluster_remain_cores = parameters[3]
         min_core_num = 100000000 #大きい数で初期化
@@ -214,9 +229,14 @@ class ClusterSlectionMethods():
 
         while total_core_num < require_core_num:
             for cluster_id, remain_core_num in enumerate(cluster_remain_cores_copy):
-                if remain_core_num < min_core_num:
+                if remain_core_num != 0 and remain_core_num < min_core_num:
                     min_core_num = remain_core_num
                     min_id = cluster_id
+            # min_core_num = min(cluster_remain_cores_copy)
+            # min_id = cluster_remain_cores_copy.index(min_core_num)
+            # if min_core_num == 0:
+            #     cluster_remain_cores_copy[min_id] = 100000000
+            # else:
             total_core_num += min_core_num
             min_cluster_ids.append(min_id)
             cluster_remain_cores_copy[min_id] = 100000000
@@ -233,10 +253,7 @@ class ClusterSlectionMethods():
         require_core_num = parameters[2]
         cluster_remain_cores = parameters[3]
 
-        if require_core_num == sum(cluster_remain_cores):
-            return self._EFT(parameters)
-
-        if require_core_num < max(cluster_remain_cores):
+        if require_core_num <= max(cluster_remain_cores):
             return self._best_fit(parameters)
         else:
             return self._min_fit(parameters)
