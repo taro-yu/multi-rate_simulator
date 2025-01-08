@@ -70,7 +70,7 @@ class ClusterSlectionMethods():
     
 
 
-# 先祖と同じクラスタになるべく割り当てたい
+# トリガエッジと同じクラスタになるべく割り当てたい
     def _pred_fit(
         self, 
         parameters: list[DAG|int|list]
@@ -81,36 +81,23 @@ class ClusterSlectionMethods():
         require_core_num = parameters[2]
         cluster_remain_cores = parameters[3]
 
-        if node_id not in dag.src:
+        if dag.nodes[node_id].timer_flag is True:
+            return None
+        else:
             pre_nodes_cluster_list =[]
-            for pre_node in dag.predecessors(node_id):
-                for core_id in dag.nodes[pre_node].allocated_cores:
-                    cluster_id, _ = self._calc_cluster_index(core_id, parameters)
-                    if len(pre_nodes_cluster_list) == 0:
-                        pre_nodes_cluster_list.append(cluster_id)
-                    elif cluster_id not in pre_nodes_cluster_list:
-                        pre_nodes_cluster_list.append(cluster_id)
+            trigger_edge = dag.nodes[node_id].trigger_edge
 
+            for core_id in dag.nodes[trigger_edge].allocated_cores:
+                cluster_id, _ = self._calc_cluster_index(core_id, parameters)
+                if len(pre_nodes_cluster_list) == 0:
+                    pre_nodes_cluster_list.append(cluster_id)
+                elif cluster_id not in pre_nodes_cluster_list:
+                    pre_nodes_cluster_list.append(cluster_id)
             if len(pre_nodes_cluster_list) == 1:
                 cluster_id = pre_nodes_cluster_list[0]
                 if require_core_num <= cluster_remain_cores[cluster_id]:
                     # print("pred")
                     return [cluster_id]
-                # else:
-                    # print("can't select pred cluster")
-                    # print("req = "+str(require_core_num)+", remain_pred_cluster_core = "+str(cluster_remain_cores[cluster_id]))
-                
-            # 後続にタイマノードがある場合、それが使っているクラスタが空いてるか調べる
-            elif len(dag.successors(node_id)) != 0:
-                for succ_id in dag.successors(node_id):
-                    if dag.nodes[succ_id].timer_flag is True:
-                        # タイマノードは一つ割り当てられている
-                        core_id = dag.nodes[succ_id].allocated_cores[0]
-                        cluster_id, _ = self._calc_cluster_index(core_id, parameters)
-                        if require_core_num <= cluster_remain_cores[cluster_id]:
-                            # print("pred_timer")
-                            return [cluster_id]
-
         return None
     
 

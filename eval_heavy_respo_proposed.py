@@ -4,7 +4,7 @@ from src.yaml_dag_reader import YamlDagReader
 
 from src.dag_timer import DAG
 
-from src.simulator_copy import Simulator
+from src.simulator import Simulator
 
 
 
@@ -69,12 +69,13 @@ for method_name in methods:
                 success_flags = []
                 ave_list_respo = []
                 ave_success_ratio = []
+                max_response_times = []
                 for cluster_comm_ratio in range(1, 51, 1):
                     cluster_comm_ratio *= 0.1
                     for n in range(dag_num):
                         # print(n)
                         print("\rheavy_respo: evaluated "+str(method_name)+" cluster_comm_ration : "+str(cluster_comm_ratio)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        # n=162
+                        # n=165
                         reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG80/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
@@ -86,7 +87,7 @@ for method_name in methods:
                         # cluster_num = 5
                         # cluster_core_num = 16
                         # deadline_ratio = 0.8
-                        simulator = Simulator(dag, cluster_num, cluster_core_num, cluster_comm_ratio=cluster_comm_ratio, method_name=method_name, heavy_task_num=4)
+                        simulator = Simulator(dag, cluster_num, cluster_core_num, cluster_comm_ratio=cluster_comm_ratio, method_name=method_name, heavy_task_num=5)
                         ave_response_time = simulator.Scheduling(task_name="heavy")
 
                         # scheduler = Scheduler2(dag, cluster_num, cluster_core_num, sp_node_id, deadline_ratio, cc_time_ratio, heavy_task_num=4, consider_compute_core=True)
@@ -127,6 +128,7 @@ for method_name in methods:
                     # ave_list_intra.append(sum(intra_cc_cost) / dag_num)
                     # ave_list_inter.append(sum(inter_cc_cost) / dag_num)
                     ave_list_respo.append(sum(response_times) / dag_num)
+                    max_response_times.append(max(response_times))
                     # ave_list_intra.append(sum(intra_cc_cost))
                     # ave_list_inter.append(sum(inter_cc_cost))
                     # ave_success_ratio.append((sum(success_flags) / dag_num))
@@ -135,10 +137,12 @@ for method_name in methods:
                     print("\n")
                     # print("total_inter_comm_ave = "+str(sum(inter_cc_cost) / dag_num))
                     # print("total_intra_comm_ave = "+str(sum(intra_cc_cost) / len(intra_cc_cost)))
-                    # print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
+                    # # print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
                     # # print("intra_comm_occur_num = "+ str(intra_comm_occur_num))
                     # print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
                     # print("max_respo_ave = "+str(sum(response_times) / len(response_times)))
+                    # print(response_times)
+                    # print(max_response_times)
 
                     # print("total_inter_comm = "+str(inter_cc_cost))
                     # print("total_intra_comm = "+str(intra_cc_cost))
@@ -159,5 +163,6 @@ for method_name in methods:
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_intra={ave_list_intra}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_success_ratio={ave_list_respo}\n\n")
-                f.write(f"respo_{method_name}_heavy_{cluster_comm_ratio}_{cluster_num}_{cluster_core_num}_respo_ave={ave_list_respo}\n\n")
+                f.write(f"respo_{method_name}_heavy_{cluster_num}_{cluster_core_num}_respo_ave={ave_list_respo}\n\n")
+                f.write(f"respo_{method_name}_heavy_{cluster_num}_{cluster_core_num}_max_respo={ave_list_respo}\n\n")
 

@@ -153,8 +153,8 @@ for method_name in methods:
                     response_times = []
                     print("\n")
 
-                f.write(f"test_result_4_{method_name}_light_false_{cluster_num}_{cluster_core_num}_intra={ave_list_intra}\n")
-                f.write(f"test_result_4_{method_name}_light_false_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n\n")
+                f.write(f"test_result_4_{method_name}_light_{cluster_num}_{cluster_core_num}_intra={ave_list_intra}\n")
+                f.write(f"test_result_4_{method_name}_light_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n\n")
                 # f.write(f"test_result_4_{method_name}_light_false_{cluster_num}_{cluster_core_num}_success_ratio={ave_list_respo}\n\n")
                 # f.write(f"test_result_4_{method_name}_light_false_{cluster_num}_{cluster_core_num}_ave_intra_per_cost={sum(intra_core_num) / len(intra_core_num)}\n")
                 # f.write(f"test_result_4_{method_name}_light_false_{cluster_num}_{cluster_core_num}_ave_intra_occur_num={sum(intra_comm_occur_num)/ len(intra_comm_occur_num)}\n\n")

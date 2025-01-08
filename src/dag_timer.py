@@ -54,6 +54,27 @@ class Node:
 
         #前に確保したコアの情報を保存
         self._allocated_cores = []
+
+        # 待ち時間を調べるための、リリースタイムと最終的な実行時間（並列実行＋cluster_comm）を保存する変数
+        self._release_time = None
+        self._c_for_respo = None
+
+    @property
+    def c_for_respo(self):
+        return self._c_for_respo
+
+    @c_for_respo.setter
+    def c_for_respo(self, time: int):
+        self._c_for_respo = time    
+
+    @property
+    def release_time(self):
+        return self._release_time
+
+    @release_time.setter
+    def release_time(self, time: int):
+        self._release_time = time
+
     def set_new_wcet(self, new_wcet):
         self._c = new_wcet
     @property
@@ -91,7 +112,7 @@ class Node:
         return self._c
 
     @c.setter
-    def c(self, n: int):
+    def c(self, n):
         self._c += n
 
     @property

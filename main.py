@@ -12,7 +12,7 @@ import networkx
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 1
+dag_num = 50
 frag = 0
 firstR_list = []
 R_list = []
@@ -27,10 +27,10 @@ success_ratios = []
 methods = ['EFT']
 methods = ['proposed', 'best', 'greedy', 'EFT']
 
-methods = ['proposed']
-methods = ['best']
-# methods = ['greedy']
-methods = ['proposed', 'best']
+# methods = ['proposed']
+# methods = ['best']
+# # methods = ['greedy']
+# methods = ['proposed', 'greedy']
 
 # methods = ['best', 'EFT', 'greedy']
 
@@ -69,11 +69,11 @@ for method_name in methods:
                 success_flags = []
                 ave_list_respo = []
                 ave_success_ratio = []
-                for m in range(40, 41, 20):
+                for m in range(100, 101, 20):
                     for n in range(dag_num):
                         # print(n)
                         print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        n=162
+                        # n=2
                         reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG"+str(m)+"/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
@@ -131,11 +131,13 @@ for method_name in methods:
                     # print("response_time_avw = "+str(sum(R_list)/len(R_list)))
                     print("\n")
                     print("total_inter_comm_ave = "+str(sum(inter_cc_cost) / dag_num))
-                    print("total_intra_comm_ave = "+str(sum(intra_cc_cost) / len(intra_cc_cost)))
-                    print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
+                    if len(intra_cc_cost) != 0:
+                        print("total_intra_comm_ave = "+str(sum(intra_cc_cost) / len(intra_cc_cost)))
+                    # print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
                     # print("intra_comm_occur_num = "+ str(intra_comm_occur_num))
-                    print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
+                    # print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
                     print("max_respo_ave = "+str(sum(response_times) / len(response_times)))
+                    # print("response_times = "+str(response_times))
 
                     # print("total_inter_comm = "+str(inter_cc_cost))
                     # print("total_intra_comm = "+str(intra_cc_cost))

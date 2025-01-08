@@ -1,36 +1,36 @@
-test_result_4_best_light_false_5_16_intra=[1.405, 13.63, 51.64, 108.995, 284.655]
-test_result_4_best_light_false_5_16_inter=[222.065, 373.06, 524.04, 598.805, 864.295]
+test_result_4_best_light_false_5_16_intra=[0.845, 14.175, 41.215, 94.865, 269.995]
+test_result_4_best_light_false_5_16_inter=[192.505, 312.005, 453.49, 530.875, 762.965]
 
-test_result_4_best_light_false_5_24_intra=[0.0, 0.12, 0.66, 6.825, 38.315]
-test_result_4_best_light_false_5_24_inter=[144.455, 269.595, 416.295, 507.905, 785.195]
+test_result_4_best_light_false_5_24_intra=[0.0, 0.01, 0.435, 5.215, 34.25]
+test_result_4_best_light_false_5_24_inter=[114.275, 224.97, 349.42, 441.59, 682.795]
 
-test_result_4_best_light_false_5_32_intra=[0.0, 0.0, 0.0, 0.13, 1.52]
-test_result_4_best_light_false_5_32_inter=[78.41, 183.655, 312.18, 398.595, 653.25]
+test_result_4_best_light_false_5_32_intra=[0.0, 0.0, 0.0, 0.055, 1.495]
+test_result_4_best_light_false_5_32_inter=[59.87, 146.55, 246.1, 332.035, 556.78]
 
-test_result_4_best_light_false_8_10_intra=[2.455, 26.535, 93.465, 190.705, 487.3]
-test_result_4_best_light_false_8_10_inter=[293.895, 448.81, 610.195, 689.74, 974.225]
+test_result_4_best_light_false_8_10_intra=[2.07, 25.51, 72.305, 160.65, 450.185]
+test_result_4_best_light_false_8_10_inter=[245.915, 381.865, 528.245, 608.94, 865.49]
 
-test_result_4_best_light_false_8_15_intra=[0.005, 0.46, 3.44, 14.94, 72.295]
-test_result_4_best_light_false_8_15_inter=[238.645, 394.045, 559.545, 648.28, 948.085]
+test_result_4_best_light_false_8_15_intra=[0.0, 0.245, 1.825, 11.86, 65.07]
+test_result_4_best_light_false_8_15_inter=[205.59, 331.82, 487.395, 581.27, 858.765]
 
-test_result_4_best_light_false_8_20_intra=[0.0, 0.0, 0.0, 0.27, 3.4]
-test_result_4_best_light_false_8_20_inter=[182.265, 327.26, 477.965, 576.115, 865.35]
+test_result_4_best_light_false_8_20_intra=[0.0, 0.0, 0.0, 0.16, 3.635]
+test_result_4_best_light_false_8_20_inter=[153.435, 268.19, 407.705, 504.615, 777.265]
 
-test_result_4_best_light_false_10_8_intra=[91.145, 152.995, 246.695, 379.605, 731.755]
-test_result_4_best_light_false_10_8_inter=[291.475, 447.79, 617.75, 691.885, 993.27]
+test_result_4_best_light_false_10_8_intra=[95.86, 156.8, 231.61, 354.52, 705.015]
+test_result_4_best_light_false_10_8_inter=[237.28, 383.235, 545.01, 623.71, 894.305]
 
-test_result_4_best_light_false_10_12_intra=[0.0, 0.295, 5.375, 19.885, 91.71]
-test_result_4_best_light_false_10_12_inter=[274.76, 431.075, 602.865, 696.405, 1004.8]
+test_result_4_best_light_false_10_12_intra=[0.0, 0.29, 3.365, 17.235, 82.12]
+test_result_4_best_light_false_10_12_inter=[234.97, 371.845, 534.85, 625.68, 910.24]
 
-test_result_4_best_light_false_10_16_intra=[0.0, 0.0, 0.0, 0.75, 5.235]
-test_result_4_best_light_false_10_16_inter=[222.845, 380.215, 542.03, 636.895, 944.495]
+test_result_4_best_light_false_10_16_intra=[0.0, 0.0, 0.0, 0.39, 4.555]
+test_result_4_best_light_false_10_16_inter=[192.925, 320.525, 473.45, 567.165, 850.575]
 
-test_result_4_best_light_false_20_4_intra=[453.68, 700.87, 1045.2, 1272.315, 1941.195]
-test_result_4_best_light_false_20_4_inter=[320.75, 478.3, 650.165, 735.735, 1050.965]
+test_result_4_best_light_false_20_4_intra=[456.19, 678.28, 1012.69, 1255.27, 1910.33]
+test_result_4_best_light_false_20_4_inter=[253.61, 401.835, 568.73, 661.9, 959.51]
 
-test_result_4_best_light_false_20_6_intra=[252.53, 410.7, 606.04, 719.115, 1079.5]
-test_result_4_best_light_false_20_6_inter=[307.66, 465.04, 640.24, 720.615, 1038.39]
+test_result_4_best_light_false_20_6_intra=[277.495, 404.32, 580.69, 712.265, 1074.025]
+test_result_4_best_light_false_20_6_inter=[249.605, 390.705, 559.76, 643.155, 945.05]
 
-test_result_4_best_light_false_20_8_intra=[90.425, 139.285, 182.455, 233.655, 323.525]
-test_result_4_best_light_false_20_8_inter=[291.695, 451.725, 629.065, 713.695, 1037.095]
+test_result_4_best_light_false_20_8_intra=[95.56, 144.485, 176.74, 228.64, 329.435]
+test_result_4_best_light_false_20_8_inter=[237.36, 387.295, 557.63, 644.34, 945.1]
 

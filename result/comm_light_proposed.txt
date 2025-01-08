@@ -1,36 +1,36 @@
-test_result_4_proposed_light_false_5_16_intra=[0.935, 10.335, 37.7, 77.515, 191.18]
-test_result_4_proposed_light_false_5_16_inter=[151.975, 245.0, 347.875, 423.745, 657.295]
+test_result_4_proposed_light_false_5_16_intra=[0.945, 10.615, 31.445, 68.055, 184.4]
+test_result_4_proposed_light_false_5_16_inter=[93.64, 163.53, 229.63, 294.47, 487.98]
 
-test_result_4_proposed_light_false_5_24_intra=[0.0, 0.105, 0.97, 5.585, 29.68]
-test_result_4_proposed_light_false_5_24_inter=[95.305, 174.065, 256.08, 311.675, 496.245]
+test_result_4_proposed_light_false_5_24_intra=[0.0, 0.015, 0.275, 4.335, 27.73]
+test_result_4_proposed_light_false_5_24_inter=[56.1, 109.15, 157.04, 200.905, 325.42]
 
-test_result_4_proposed_light_false_5_32_intra=[0.0, 0.0, 0.0, 0.165, 1.045]
-test_result_4_proposed_light_false_5_32_inter=[55.5, 119.11, 189.62, 242.12, 398.205]
+test_result_4_proposed_light_false_5_32_intra=[0.0, 0.0, 0.0, 0.085, 1.49]
+test_result_4_proposed_light_false_5_32_inter=[31.91, 71.0, 111.985, 147.62, 245.755]
 
-test_result_4_proposed_light_false_8_10_intra=[1.285, 18.12, 57.385, 121.55, 286.66]
-test_result_4_proposed_light_false_8_10_inter=[212.37, 314.91, 438.975, 512.08, 778.95]
+test_result_4_proposed_light_false_8_10_intra=[1.06, 20.065, 53.935, 110.0, 277.8]
+test_result_4_proposed_light_false_8_10_inter=[126.985, 215.06, 300.98, 374.62, 606.845]
 
-test_result_4_proposed_light_false_8_15_intra=[0.025, 0.42, 2.555, 10.975, 50.46]
-test_result_4_proposed_light_false_8_15_inter=[159.09, 255.375, 349.96, 414.385, 627.11]
+test_result_4_proposed_light_false_8_15_intra=[0.01, 0.415, 1.7, 9.47, 48.45]
+test_result_4_proposed_light_false_8_15_inter=[99.06, 163.515, 222.85, 279.555, 435.18]
 
-test_result_4_proposed_light_false_8_20_intra=[0.0, 0.0, 0.005, 0.265, 2.555]
-test_result_4_proposed_light_false_8_20_inter=[122.76, 206.215, 294.51, 348.675, 541.375]
+test_result_4_proposed_light_false_8_20_intra=[0.0, 0.0, 0.0, 0.18, 2.755]
+test_result_4_proposed_light_false_8_20_inter=[72.23, 130.285, 184.535, 228.15, 354.81]
 
-test_result_4_proposed_light_false_10_8_intra=[54.37, 78.605, 128.055, 194.33, 372.34]
-test_result_4_proposed_light_false_10_8_inter=[235.98, 360.175, 507.15, 586.61, 861.1]
+test_result_4_proposed_light_false_10_8_intra=[58.17, 83.885, 126.325, 187.925, 373.49]
+test_result_4_proposed_light_false_10_8_inter=[161.46, 272.5, 391.25, 464.175, 710.495]
 
-test_result_4_proposed_light_false_10_12_intra=[0.005, 0.335, 4.235, 14.79, 62.7]
-test_result_4_proposed_light_false_10_12_inter=[190.7, 285.51, 388.645, 453.115, 673.945]
+test_result_4_proposed_light_false_10_12_intra=[0.0, 0.19, 2.485, 13.52, 63.745]
+test_result_4_proposed_light_false_10_12_inter=[114.92, 187.28, 255.15, 311.51, 488.19]
 
-test_result_4_proposed_light_false_10_16_intra=[0.0, 0.0, 0.0, 0.355, 3.45]
-test_result_4_proposed_light_false_10_16_inter=[151.94, 244.185, 335.635, 399.15, 598.625]
+test_result_4_proposed_light_false_10_16_intra=[0.0, 0.0, 0.0, 0.405, 3.715]
+test_result_4_proposed_light_false_10_16_inter=[93.845, 160.285, 215.425, 267.44, 404.24]
 
-test_result_4_proposed_light_false_20_4_intra=[259.315, 370.475, 524.455, 625.56, 929.385]
-test_result_4_proposed_light_false_20_4_inter=[321.87, 481.545, 654.72, 740.575, 1056.035]
+test_result_4_proposed_light_false_20_4_intra=[285.27, 382.275, 539.575, 641.985, 950.125]
+test_result_4_proposed_light_false_20_4_inter=[253.81, 399.825, 569.775, 658.88, 958.41]
 
-test_result_4_proposed_light_false_20_6_intra=[138.415, 199.515, 283.135, 319.865, 468.275]
-test_result_4_proposed_light_false_20_6_inter=[293.28, 446.42, 611.395, 690.625, 994.13]
+test_result_4_proposed_light_false_20_6_intra=[154.93, 206.36, 281.65, 330.62, 476.32]
+test_result_4_proposed_light_false_20_6_inter=[223.475, 364.845, 510.72, 590.44, 856.145]
 
-test_result_4_proposed_light_false_20_8_intra=[53.875, 69.27, 85.265, 102.41, 131.5]
-test_result_4_proposed_light_false_20_8_inter=[235.97, 359.94, 503.695, 577.3, 818.43]
+test_result_4_proposed_light_false_20_8_intra=[58.0, 74.49, 86.88, 104.38, 140.16]
+test_result_4_proposed_light_false_20_8_inter=[161.49, 271.74, 385.805, 448.595, 650.575]
 
