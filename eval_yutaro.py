@@ -58,7 +58,7 @@ cluster_total_cores = [80]
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'test.txt', 'w') as f:
+    with open(f'yutaro_{method_name}.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -68,12 +68,13 @@ for method_name in methods:
                 ave_list_inter = [] 
                 success_flags = []
                 ave_list_respo = []
+                response_times_for_hako = []
                 ave_success_ratio = []
-                for m in range(40, 81, 20):
+                for m in range(40, 121, 20):
                     for n in range(dag_num):
                         # print(n)
                         print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        n=2
+                        # n=11
                         reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG"+str(m)+"/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
@@ -86,7 +87,7 @@ for method_name in methods:
                         # cluster_core_num = 16
                         # deadline_ratio = 0.8
                         simulator = Simulator(dag, cluster_num, cluster_core_num, cc_time_ratio, method_name)
-                        ave_response_time = simulator.Scheduling(task_name='okamu')
+                        ave_response_time = simulator.Scheduling(task_name='yutaro')
 
                         # scheduler = Scheduler2(dag, cluster_num, cluster_core_num, sp_node_id, deadline_ratio, cc_time_ratio, heavy_task_num=4, consider_compute_core=True)
                         # ave_response_time = scheduler.Scheduling(n, task_name="heavy")
@@ -118,7 +119,9 @@ for method_name in methods:
                         max_respo = max(simulator._response_times)
                         response_times.append(max_respo)
                         # print(simulator._response_times)
-
+                    
+                    
+                    response_times_for_hako.append(response_times)
 
                     # success_ratio = sum(success_flags)/dag_num
                     # ave_list_intra.append(sum(intra_cc_cost) / dag_num)
@@ -155,6 +158,7 @@ for method_name in methods:
                     response_times = []
                     print("\n")
 
+                f.write(f"yutaro_result_response_times_{cluster_core_num}={response_times_for_hako}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_intra={ave_list_intra}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_success_ratio={ave_list_respo}\n\n")

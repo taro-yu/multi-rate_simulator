@@ -1,7 +1,7 @@
 from .dag_timer import DAG, Node
 from itertools import combinations
 from .cluster_selection import ClusterSlectionMethods
-import math, copy, random
+import math, copy, random, networkx
 
 class Simulator():
 
@@ -44,6 +44,10 @@ class Simulator():
 
         # 何でも用
         self._count = 0
+
+        # 修論用
+        self._task_map = [[] for n in range(self._total_core_num) ]
+        self._parallel_num_threshold = 20
     
     # main関数
     def Scheduling(
@@ -57,6 +61,10 @@ class Simulator():
             self._decide_require_core_num_heavy(self._heavy_task_num)
         elif task_name == "light":
             self._decide_require_core_num_light()
+        elif task_name == "okamu":
+            self._core_allocation_by_okamu()
+        elif task_name == "yutaro":
+            self._core_allocation_by_yutaro()
 
         self._simulator(self._method_name)
 
@@ -369,7 +377,7 @@ class Simulator():
         assert N != 0
 
         speed_up = 1 / ((1-K) + (K/N))
-        job.set_new_wcet(math.ceil(base_wcet / speed_up))
+        job.set_new_wcet(base_wcet / speed_up)
 
     
 
@@ -425,33 +433,205 @@ class Simulator():
             # require_core_num = 
             node.require_core_num = require_core_num
             seed += 1
+    
+
+    #修論用
+
+    def _core_allocation_by_okamu(self):
+        total_parallel_cores = 0
+        nth_path = 1
+        while(total_parallel_cores < self._total_core_num):
+            # print("total_parallel_cores = "+str(total_parallel_cores))
+            max_wcet = -1
+            max_id = None
+            while max_id is None:
+                max_path = self._req_max_path(nth_path)
+                # print(max_path)
+                max_wcet = -1
+                for id in max_path:
+                    wcet_n = self._req_parallel_ex_time(
+                        self._dag.nodes[id],
+                        self._dag.nodes[id].require_core_num
+                    )
+                    # print(self._dag.nodes[id].k)
+                    # print("wcet="+str(wcet_n))
+
+                    if wcet_n > max_wcet and self._dag.nodes[id].k != 0 and \
+                                self._dag.nodes[id].require_core_num+1 <= self._parallel_num_threshold:
+                        max_wcet = wcet_n
+                        max_id = id
+                        # print(wcet_n)
+                        # print(self._dag.nodes[id].k)
+                        # print(max_id)
+                        # print(self._dag.nodes[max_id].require_core_num)
+
+                if max_id is None:
+                    # print(self._dag.nodes[max_id].k)
+                    # max_id = None
+                    nth_path += 1
+                    
+            # print("max_wcrt = "+str(max_wcet))
+            # print("max_id = "+str(max_id))
+            if self._dag.nodes[max_id].require_core_num == 1:
+                total_parallel_cores += 2
+                self._dag.nodes[max_id].require_core_num += 1
+            else:
+                total_parallel_cores += 1
+                self._dag.nodes[max_id].require_core_num += 1 
 
 
+    def _core_allocation_by_yutaro(self):
+        total_parallel_cores = 0
+        nth_path = 1
+        while(total_parallel_cores < self._total_core_num):
+            max_path = self._req_max_path(nth_path)
+            selected_id = self._reduction_effectiveness_method(max_path) 
+            while selected_id is None:
+                nth_path += 1
+                max_path = self._req_max_path(nth_path)
+                selected_id = self._reduction_effectiveness_method(max_path)
 
-    #修論用：コア数決定 by okamuさん IEEE Access
-    def _decide_require_core_num_by_okamu(self):
-        seed = 0
-        # print("num_of_timer = "+str(self._dag.num_of_timer))
-        for node in self._dag.nodes:
+            # print("max_id = "+str(selected_id))
+            # print("max_wcrt = "+str(self._dag.nodes[selected_id].wcrt))
+            if self._dag.nodes[selected_id].require_core_num == 1:
+                total_parallel_cores += 2
+                self._dag.nodes[selected_id].require_core_num += 1
+            else:
+                total_parallel_cores += 1
+                self._dag.nodes[selected_id].require_core_num += 1 
+    
 
-            random.seed(seed)
-            require_core_num = random.randint(1, 9) 
-            # require_core_num = 
-            node.require_core_num = require_core_num
-            seed += 1
+    def _reduction_effectiveness_method(self, path: list[int]):
+
+        selected_id = None
+        tmp_reduction_diff = -1
+        total_diff = 0
+        # print(path)
+        for id in path:
+            if self._dag.nodes[id].require_core_num > 1:
+                base_c = self._req_parallel_ex_time(
+                    self._dag.nodes[id],
+                    self._dag.nodes[id].require_core_num
+                )
+            else:
+                base_c = self._dag.nodes[id].c
+            new_c = self._req_parallel_ex_time(
+                self._dag.nodes[id],
+                self._dag.nodes[id].require_core_num+1
+            )
+            # print("node_id = "+str(id)+", require_core = "+str(self._dag.nodes[id].require_core_num))
+            # print("base_c = "+str(base_c)+", new_c = "+str(new_c)+", diff = "+str(base_c - new_c))
+            if base_c - new_c > tmp_reduction_diff and self._dag.nodes[id].require_core_num+1 <= self._parallel_num_threshold:
+                tmp_reduction_diff = base_c - new_c
+                selected_id = id
+
+                #コアを増やしても差が出来なくなったら別のpathに変えるため
+                total_diff +=tmp_reduction_diff 
+                # print("tmp_diff = "+str(tmp_reduction_diff)+", node_id ="+str(selected_id))
+        
+        # assert selected_id is not None
+
+        if total_diff == 0:
+            return None
+        else:
+            return selected_id
 
 
-    #修論用：コア数決定 by refm
-    def _decide_require_core_num_by_okamu(self):
-        seed = 0
-        # print("num_of_timer = "+str(self._dag.num_of_timer))
-        for node in self._dag.nodes:
+    
+    def _calc_node_wcrt(self, node: Node):
+        hp_list = self._dag._high_priorities(node)
+        lp_list = self._dag._low_priorities(node)
 
-            random.seed(seed)
-            require_core_num = random.randint(1, 9) 
-            # require_core_num = 
-            node.require_core_num = require_core_num
-            seed += 1
+        # bi (: nodeより優先度が低いタスクの中で最も大きいC^n)を求める
+        bi_max = 0
+        for lp_id in lp_list:
+            if self._dag.nodes[lp_id].require_core_num > 1:
+                lp_wcet_n = self._req_parallel_ex_time(
+                            self._dag.nodes[lp_id],
+                            self._dag.nodes[lp_id].require_core_num
+                        )
+            else:
+                lp_wcet_n = self._dag.nodes[lp_id].c
+            if lp_wcet_n > bi_max:
+                bi_max = lp_wcet_n
+        
+        # 優先度が高いタスクによる遅延を計算
+        total_hp_delay = 0
+        for hp_id in hp_list:
+            if self._dag.nodes[hp_id].require_core_num > 1:
+                hp_wcet_n = self._req_parallel_ex_time(
+                            self._dag.nodes[hp_id],
+                            self._dag.nodes[hp_id].require_core_num
+                )
+            else:
+                hp_wcet_n = self._dag.nodes[hp_id].c
+            hp_period = self._dag.nodes[hp_id].period
+            for n in range(math.ceil(node.period / hp_period)):
+                if node.laxity < self._dag.nodes[hp_id].laxity + (n-1) * hp_period:
+                    break
+                else:
+                    total_hp_delay += hp_wcet_n
+       
+        # 自身の並列実行時間を取得
+        if node.require_core_num > 1:
+            node_wcet_n = self._req_parallel_ex_time(
+                            node,
+                            node.require_core_num
+                        )
+        else:
+            node_wcet_n = node.c
+        
+        # WCRTを求め return
+        node_wcrt = node_wcet_n + bi_max + total_hp_delay
+        node.wcrt = node_wcrt
+
+        return node_wcrt
+
+    
+    def _req_parallel_ex_time(
+        self,
+        node: Node,
+        req_core_num: int
+    ):  
+        K = node.k
+        N = req_core_num
+
+        #与えられたコア数で並列処理すると、もとのWCETが何倍速になるのかをアムダールの式で計算
+        assert N != 0
+
+        speed_up = 1 / ((1-K) + (K/N))
+        wcet_n = (node.c / speed_up)
+        # print(wcet_n)
+
+        return wcet_n
+    
+
+    def _req_max_path(self, n:int):
+
+        # pathの中で、トータルwcrtがn番目に大きいpathを選択する
+        nth_path = n 
+        length = 0
+        path_sums = []
+        max_respo_chain = []
+        for s in self._dag.src:
+            for d in self._dag.snk:
+                for path in list(networkx.all_simple_paths(self._dag.G, s, d)):
+                    # print("s = "+str(s)+"d = "+str(d))
+                    tmp_length = 0
+                    for i in path:
+                        wcrt_i = self._calc_node_wcrt(self._dag.nodes[i])
+                        # print(wcrt_i)
+                        if self._dag.nodes[i].trigger_edge in path:
+                            period_i = self._dag.nodes[i].period
+                        else:
+                            period_i = 0
+                        tmp_length += wcrt_i + period_i
+                    path_sums.append((path, tmp_length))
+        path_sums.sort(key=lambda x: x[1])
+                    # print("max_value = "+str(length))
+                    # print("max_path = "+str(max_respo_chain))
+        # print(max_respo_chain)
+        return path_sums[nth_path-1][0]
 
 
 

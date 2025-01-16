@@ -58,7 +58,7 @@ cluster_total_cores = [80]
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'test.txt', 'w') as f:
+    with open(f'okamu_{method_name}.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -69,11 +69,12 @@ for method_name in methods:
                 success_flags = []
                 ave_list_respo = []
                 ave_success_ratio = []
-                for m in range(40, 81, 20):
+                response_times_for_hako = []
+                for m in range(40, 121, 20):
                     for n in range(dag_num):
                         # print(n)
                         print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        n=2
+                        # n=15
                         reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG"+str(m)+"/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
@@ -120,6 +121,7 @@ for method_name in methods:
                         # print(simulator._response_times)
 
 
+                    response_times_for_hako.append(response_times)
                     # success_ratio = sum(success_flags)/dag_num
                     # ave_list_intra.append(sum(intra_cc_cost) / dag_num)
                     # ave_list_inter.append(sum(inter_cc_cost) / dag_num)
@@ -155,7 +157,7 @@ for method_name in methods:
                     response_times = []
                     print("\n")
 
-                # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_intra={ave_list_intra}\n")
+                f.write(f"okamu_result_response_times_{cluster_core_num}={response_times_for_hako}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_success_ratio={ave_list_respo}\n\n")
 

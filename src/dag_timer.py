@@ -16,7 +16,8 @@ class Node:
         activate_num: int = 1 ,
         trigger_edge: int | None = None,
         timer_flag: bool = False,
-        laxity: int = 0
+        laxity: int = 0,
+        util: float = 0
     ):
         self._c = c
         self._c_base = c
@@ -38,6 +39,11 @@ class Node:
         self._seed = seed
         self._remain_ex_time = self._c
 
+        #修論用
+        # 各ノードの利用率
+        self._util = util
+        self._wcrt = 0
+
 
 
         #20241010現在、生成したDAGの周期が20~50のため、10倍している
@@ -58,6 +64,15 @@ class Node:
         # 待ち時間を調べるための、リリースタイムと最終的な実行時間（並列実行＋cluster_comm）を保存する変数
         self._release_time = None
         self._c_for_respo = None
+
+
+    @property
+    def wcrt(self):
+        return self._wcrt
+
+    @wcrt.setter
+    def wcrt(self, wcrt: int):
+        self._wcrt = wcrt  
 
     @property
     def c_for_respo(self):
@@ -255,6 +270,13 @@ class Node:
     def core_clear(self):
         self._core.clear()
 
+    @property
+    def util(self):
+        return self._util
+    
+    @util.setter
+    def util(self, util: float):
+        self._util = util
     
 
 
@@ -322,6 +344,11 @@ class DAG:
         self._culc_laxity()
         self._c_path = self._culc_c_path()
         self._c_path2 = self._culc_c_path2()
+
+        #利用率の計算
+        for node in self._nodes:
+            node.util = node.c / node.period
+
 
 
 
@@ -562,9 +589,40 @@ class DAG:
             activate_num=node.activate_num,
             trigger_edge=node.trigger_edge,
             timer_flag=node.timer_flag,
-            laxity=node.laxity+node.period*(now_active_num-1) 
+            laxity=node.laxity+node.period*(now_active_num-1),
+            util=node.util
         )
         return new_job
+    
+
+    # 修論用
+    def _high_priorities(self, node: Node) -> list[int]:
+        hp_list = []
+        for nd in self.nodes:
+            # ガード節
+            if node.id == nd.id:
+                continue
+
+            if nd.laxity <= node.laxity:
+                hp_list.append(nd.id)
+        
+        return hp_list
+    
+
+    # 修論用
+    def _low_priorities(self, node: Node) -> list[int]:
+        lp_list = []
+        for nd in self.nodes:
+            # ガード節
+            if node.id == nd.id:
+                continue
+
+            if nd.laxity > node.laxity:
+                lp_list.append(nd.id)
+        
+        return lp_list
+    
+
 
     
 
