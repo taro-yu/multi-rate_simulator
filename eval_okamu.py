@@ -12,7 +12,7 @@ import networkx
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 200
+dag_num = 50
 frag = 0
 firstR_list = []
 R_list = []
@@ -22,6 +22,8 @@ inter_cc_cost = []
 intra_core_num = []
 intra_comm_occur_num = []
 response_times = []
+response_times_c = []
+
 success_flags = []
 success_ratios = []
 # methods = ['EFT']
@@ -54,6 +56,7 @@ sp_node_id = 0
 
 deadline_ratio = 0.5
 cluster_nums = [5]
+# cluster_total_cores = [80, 100, 120, 140, 160, 180, 200]
 cluster_total_cores = [80]
 
 for method_name in methods:
@@ -70,11 +73,13 @@ for method_name in methods:
                 ave_list_respo = []
                 ave_success_ratio = []
                 response_times_for_hako = []
-                for m in range(40, 121, 20):
+                response_times_for_hako_c = []
+
+                for m in range(40, 61, 20):
                     for n in range(dag_num):
                         # print(n)
                         print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        # n=15
+                        # n=64
                         reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG"+str(m)+"/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
@@ -95,33 +100,51 @@ for method_name in methods:
                         #     frag += 1
                         # else:
                         #     print("dag_number = "+str(n))
-                        R_list.append(ave_response_time)
+                        if ave_response_time is True:
+                            R_list.append(ave_response_time)
+                            print("True")
 
-                        #今回は率を計算するため、トータルの回数で割っている
-                        # print(scheduler._total_comm_within_node)
-                        # print(scheduler._total_intra_cc_cost)
-                        # print(scheduler._total_comm_between_node)
-                        # print(scheduler._total_inter_cc_cost)
-                        # print("#")
-                        # print("total_intra_cc_cost = "+str(scheduler._total_intra_cc_cost))
-                        if simulator._total_intra_cc_cost == 0:
-                            pass
+                            #今回は率を計算するため、トータルの回数で割っている
+                            # print(scheduler._total_comm_within_node)
+                            # print(scheduler._total_intra_cc_cost)
+                            # print(scheduler._total_comm_between_node)
+                            # print(scheduler._total_inter_cc_cost)
+                            # print("#")
+                            # print("total_intra_cc_cost = "+str(scheduler._total_intra_cc_cost))
+                            if simulator._total_intra_cc_cost == 0:
+                                pass
+                            else:
+                                intra_cc_cost.append(simulator._total_intra_cc_cost)
+                            inter_cc_cost.append(simulator._total_inter_cc_cost)
+                            if len(simulator._intra_core_num) == 0:
+                                pass
+                            else:
+                                intra_core_num.append(sum(simulator._intra_core_num) / len(simulator._intra_core_num))
+                            
+                                # 一ジョブが複数クラスタからの確保を行った回数
+                                intra_comm_occur_num.append(len(simulator._intra_core_num))
+                            if len(simulator._response_times) == 0:
+                                response_times.append(False)
+                                response_times_c.append(False)
+                            else:
+                                max_respo = max(simulator._response_times)
+                                max_respo_c = max(simulator._response_times_c)
+                                response_times.append(max_respo)
+                                response_times_c.append(max_respo_c)
+                                print("max_respo = "+str(max_respo)+", max_respo_c = "+str(max_respo_c))
+
+                                
+                            # print(simulator._response_times)
                         else:
-                            intra_cc_cost.append(simulator._total_intra_cc_cost)
-                        inter_cc_cost.append(simulator._total_inter_cc_cost)
-                        if len(simulator._intra_core_num) == 0:
-                            pass
-                        else:
-                            intra_core_num.append(sum(simulator._intra_core_num) / len(simulator._intra_core_num))
-                           
-                            # 一ジョブが複数クラスタからの確保を行った回数
-                            intra_comm_occur_num.append(len(simulator._intra_core_num))
-                        max_respo = max(simulator._response_times)
-                        response_times.append(max_respo)
-                        # print(simulator._response_times)
+                            response_times.append(False)
+                            response_times_c.append(False)
+                        
+                        # print(response_times)
+                        # print(response_times_c)
 
 
                     response_times_for_hako.append(response_times)
+                    response_times_for_hako_c.append(response_times_c)
                     # success_ratio = sum(success_flags)/dag_num
                     # ave_list_intra.append(sum(intra_cc_cost) / dag_num)
                     # ave_list_inter.append(sum(inter_cc_cost) / dag_num)
@@ -131,15 +154,15 @@ for method_name in methods:
                     # ave_success_ratio.append((sum(success_flags) / dag_num))
                     # print("response_time_list = "+str(R_list))
                     # print("response_time_avw = "+str(sum(R_list)/len(R_list)))
-                    print("\n")
-                    print("total_inter_comm_ave = "+str(sum(inter_cc_cost) / dag_num))
-                    if len(intra_cc_cost) != 0:
-                        print("total_intra_comm_ave = "+str(sum(intra_cc_cost) / len(intra_cc_cost)))
-                    # print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
-                    # print("intra_comm_occur_num = "+ str(intra_comm_occur_num))
-                    # print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
-                    print("max_respo_ave = "+str(sum(response_times) / len(response_times)))
-                    # print("response_times = "+str(response_times))
+                    # print("\n")
+                    # print("total_inter_comm_ave = "+str(sum(inter_cc_cost) / dag_num))
+                    # if len(intra_cc_cost) != 0:
+                    #     print("total_intra_comm_ave = "+str(sum(intra_cc_cost) / len(intra_cc_cost)))
+                    # # print("average_intra_comm = "+str(sum(intra_core_num) / len(intra_core_num)))
+                    # # print("intra_comm_occur_num = "+ str(intra_comm_occur_num))
+                    # # print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
+                    # print("max_respo_ave = "+str(sum(response_times) / len(response_times)))
+                    # # print("response_times = "+str(response_times))
 
                     # print("total_inter_comm = "+str(inter_cc_cost))
                     # print("total_intra_comm = "+str(intra_cc_cost))
@@ -155,9 +178,12 @@ for method_name in methods:
                     R_list = []
                     success_flags = []
                     response_times = []
+                    response_times_c = []
                     print("\n")
 
-                f.write(f"okamu_result_response_times_{cluster_core_num}={response_times_for_hako}\n")
+                f.write(f"okamu_result_response_times_{cluster_num}_{cluster_core_num}={response_times_for_hako}\n")
+                f.write(f"okamu_result_response_times_c_{cluster_num}_{cluster_core_num}={response_times_for_hako_c}\n")
+
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_success_ratio={ave_list_respo}\n\n")
 

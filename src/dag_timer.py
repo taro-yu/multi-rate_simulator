@@ -27,10 +27,18 @@ class Node:
         self._require_core_num = require_core_num
         self._core = []
         self._laxity = laxity
-        if k_parallel >= 1:
-            self._k = k_parallel / 10
+                
+        # 修論版
+        if k_parallel <= 4:
+            self._k = (k_parallel+5) / 10
         else:
-            self._k = k_parallel
+            self._k = k_parallel / 10
+
+        # # クラスタ選択の場合
+        # if k_parallel >= 1:
+        #     self._k = k_parallel / 10
+        # else:
+        #     self._k = k_parallel
         self._finish = False
         self._id = id
         self._p = -1
@@ -43,6 +51,8 @@ class Node:
         # 各ノードの利用率
         self._util = util
         self._wcrt = 0
+        self._nth_finish = {}
+        self._pre_ft = None
 
 
 
@@ -63,8 +73,50 @@ class Node:
 
         # 待ち時間を調べるための、リリースタイムと最終的な実行時間（並列実行＋cluster_comm）を保存する変数
         self._release_time = None
-        self._c_for_respo = None
+        self._c_for_respo = []
+        self._start_time = []
+        self._finish_time = []
 
+
+
+    def record_finish_time(self, n: int, finish_time):
+        """
+        n回目の終了時間
+        :param n: 起動回数
+        :param finish_time: 終了時間
+        """
+        self._nth_finish[n] = finish_time
+
+    def get_finish_time(self, n: int | None):
+        if n is None:
+            return self._nth_finish.values()
+        else:
+            return self._nth_finish[n]
+
+
+    @property
+    def pre_ft(self):
+        return self._pre_ft
+
+    @pre_ft.setter
+    def pre_ft(self, pre_ft: int):
+        self._pre_ft = pre_ft 
+    
+    @property
+    def finish_time(self):
+        return self._finish_time
+
+    @finish_time.setter
+    def finish_time(self, finish_time: int):
+        self._finish_time.append(finish_time)  
+
+    @property
+    def start_time(self):
+        return self._start_time
+
+    @start_time.setter
+    def start_time(self, start_time: int):
+        self._start_time.append(start_time)  
 
     @property
     def wcrt(self):
@@ -80,7 +132,7 @@ class Node:
 
     @c_for_respo.setter
     def c_for_respo(self, time: int):
-        self._c_for_respo = time    
+        self._c_for_respo.append(time)    
 
     @property
     def release_time(self):
@@ -348,6 +400,7 @@ class DAG:
         #利用率の計算
         for node in self._nodes:
             node.util = node.c / node.period
+
 
 
 

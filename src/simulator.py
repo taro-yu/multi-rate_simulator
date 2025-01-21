@@ -38,6 +38,7 @@ class Simulator():
         self._execution_list = []
         self._timer_nodes = []
         self._response_times = []
+        self._response_times_c = []
 
         #シミュレーション経過時間
         self._sim_time = 0
@@ -47,7 +48,9 @@ class Simulator():
 
         # 修論用
         self._task_map = [[] for n in range(self._total_core_num) ]
-        self._parallel_num_threshold = 20
+        self._parallel_num_threshold = 10
+        self._largest_path = None
+        self._allocate_cores = 0
     
     # main関数
     def Scheduling(
@@ -62,25 +65,36 @@ class Simulator():
         elif task_name == "light":
             self._decide_require_core_num_light()
         elif task_name == "okamu":
-            self._core_allocation_by_okamu()
+            result = self._core_allocation_by_okamu()
+            if result is False:
+                return False
         elif task_name == "yutaro":
-            self._core_allocation_by_yutaro()
+            result = self._core_allocation_by_yutaro()
+            if result is False:
+                return False
 
-        self._simulator(self._method_name)
+        self._simulator(self._method_name, task_name)
 
-        return
+        return True
         
 
 
 
     def _simulator(
         self,
-        method_name
+        method_name,
+        task_name: str
     ):
         HP = self._dag._calc_HP()
         self._dag._allocate_period_from_src()
         cluster_selector = ClusterSlectionMethods()
         # print(HP)
+
+        # total = 0
+        # for id in self._largest_path:
+        #     total += self._dag.nodes[id].require_core_num
+        #     print("id = "+str(id)+", req = "+str(self._dag.nodes[id].require_core_num))
+        # print("total = "+str(total))
         
         # タイマーノードを一か所に集めておく+初めに実行できるジョブを生成
         for node in self._dag.nodes:
@@ -89,34 +103,24 @@ class Simulator():
                 new_job = self._dag.make_new_job(node)
                 new_job.release_time = self._sim_time
                 self._wait_queue.append(new_job)
+                # print("timer = "+str(node.id))
         
-        # 途中のタイマノードに専用コアを割り当てる
-        # for timer_node in self._timer_nodes:
-        #     if timer_node.id not in self._dag.src:
-        #         for cluster_id in range(self._cluster_num):
-        #             for cluster_core_id, core_flag in enumerate(self._cluster_remain_available[cluster_id]):
-        #                 if core_flag is True:
-        #                     core_id = self._calc_core_id(cluster_id, cluster_core_id)
-        #                     timer_node.allocated_cores = core_id
-        #                     self._cluster_remain_available[cluster_id][cluster_core_id] = False
-        #                     self._cluster_remain_cores[cluster_id] -= 1
-        #                     break
-        #             if len(timer_node.allocated_cores) != 0:
-        #                 break
-
         # シミュレーション開始
         snk_id = self._dag.snk[0]
 
-        while self._sim_time <= HP or self._dag.nodes[snk_id].FT is None:
+        # HPまでやるか、少なくとも一回は出口ノードがfinishするか
+        while self._sim_time <= HP or len(self._dag.nodes[snk_id].finish_time) == 0:
 
             # 実行が完了したノードの対応
-            ex_to_wait_jobs = []
+            finish_jobs = []
             for ex_list_id, ex_job in enumerate(self._execution_list):
                 # print("job_id = "+str(ex_job.id)+" ex_job.c = "+ str(ex_job.c))
 
                 if ex_job.finish is True:
-                    ex_to_wait_jobs.append(ex_list_id)                  
+                    finish_jobs.append(ex_list_id)
+                    self._dag.nodes[ex_job.id].finish_time = self._sim_time         
                     self._dag.nodes[ex_job.id].activate_num = 1
+                    # self._dag.nodes[ex_job.id].FT = self._sim_time
                     # print("job_id = "+str(ex_job.id)+" ex_job.c = "+ str(ex_job.c))
 
 
@@ -138,13 +142,23 @@ class Simulator():
                     # 出口ノードが終了したら、終了時間を求め、応答時間を算出
                     if ex_job.id in self._dag.snk:
                         # FTは、最終ノードが終わるまでシミュレーションを行うための仕組み
-                        self._dag.nodes[ex_job.id].FT = self._sim_time
-                        response_time = self._calc_response_time()
-                        if response_time is not None:
-                            self._response_times.append(response_time)
+                        if task_name == 'okamu' or 'yutaro':
+                            response_time, response_time_c = self._calc_response_time_2()
+                            if response_time is not None:
+                                self._response_times.append(response_time)
+                                self._response_times_c.append(response_time_c)
+
+                        else:
+                            response_time, response_time_c = self._calc_response_time()
+                            if response_time is not None:
+                                self._response_times.append(response_time)
+                                self._response_times_c.append(response_time_c)
+                        # response_time = self._calc_response_time()
+                        # if response_time is not None:
+                        #     self._response_times.append(response_time)
             
             self._execution_list = [job for id, job in enumerate(self._execution_list) \
-                                                                    if id not in ex_to_wait_jobs]
+                                                                    if id not in finish_jobs]
 
 
             # タイマノードの周期が来ていたらジョブを追加
@@ -167,13 +181,6 @@ class Simulator():
                     # print("req="+str(wait_job.require_core_num)+"sum = "+str(sum(self._cluster_remain_cores)))
                     break
                 else:
-                    # クラスタを選択
-                    # print("ex_job = "+str(wait_job.id))
-                    # if wait_job.timer_flag is True and wait_job.id not in self._dag.src:
-                    # # 途中のタイマノード
-                    #     wait_job.core = self._dag.nodes[wait_job.id].allocated_cores[0]
-                    # else:
-                    # それ以外
                     selected_clusters = cluster_selector.select_clusters( # 別ファイルで定義
                                                             self._dag,
                                                             wait_job.id,
@@ -183,17 +190,7 @@ class Simulator():
                                                             method_name
                                                         ) 
                     assert selected_clusters != None
-                    # if wait_job.id in [12, 8, 7, 15]:
-                    
-                    #     print("selected_cluster = "+str(selected_clusters))
-                    # if 100 < self._sim_time and self._sim_time <200:
-                    #     # if len(selected_clusters) >= 2:
-                    #     print("\n")
-                    #     print("job_id = "+str(wait_job.id))
-                    #     print("req_core = "+str(wait_job.require_core_num)+", selected_c="+str(selected_clusters)+", remain_cores="+str(self._cluster_remain_cores))
 
-                    # コアの確保
-                        # print("req_core="+str(wait_job.require_core_num)+", before_cores="+str(self._cluster_remain_cores))
                     allocate_count = 0
                     for cluster_id in selected_clusters:
                         for cluster_core_id, core_flag in enumerate(self._cluster_remain_available[cluster_id]):
@@ -205,11 +202,6 @@ class Simulator():
                                 self._cluster_remain_cores[cluster_id] -= 1
                                 self._cluster_remain_available[cluster_id][cluster_core_id] = False
                                 allocate_count += 1
-                    # if len(selected_clusters) >= 2:
-                    # if self._sim_time < 100:
-                    # if 100 < self._sim_time and self._sim_time <200:
-                    #     # if len(selected_clusters) >= 2:
-                    #     print("remain_cores = "+str(self._cluster_remain_cores)+", selected_clusters = "+str(selected_clusters))
                     # # 並列処理によるwcetの変化
                     if len(wait_job.core) >= 2:
                         self._new_wcet(wait_job)
@@ -221,9 +213,17 @@ class Simulator():
                     # 実行中リストに追加 & waitキューから除外
                     self._execution_list.append(wait_job)
 
+
                     # 並列実行時間＋クラスタ間通信＋待ち時間を応答時間算出のために定義
-                    self._dag.nodes[wait_job.id].c_for_respo = wait_job.c + (self._sim_time - wait_job.release_time)
+                    # if wait_job.id in self._largest_path:
+                        # print("id = "+str(wait_job.id)+"c = "+str(wait_job.c)+", wait_time = "+str(self._sim_time - wait_job.release_time))
+                    # self._dag.nodes[wait_job.id].c_for_respo = wait_job.c + (self._sim_time - wait_job.release_time)
+                    self._dag.nodes[wait_job.id].c_for_respo = wait_job.c
+                    self._dag.nodes[wait_job.id].start_time = self._sim_time
+
+                    assert len(self._dag.nodes[wait_job.id].c_for_respo) == len(self._dag.nodes[wait_job.id].start_time)
                     
+                                         
 
                     # print("new_ex_job.laxity = "+str(wait_job.laxity))
                     wait_to_ex_job += 1
@@ -257,32 +257,9 @@ class Simulator():
         assert sum(self._cluster_remain_cores) == sum_available
 
     
+    #IEEE Access用
     def _calc_response_time(self) -> int:
-        # #トリガノードとなっている入口ノードを選び出す
-        # trigger_timer_node = []
-        # for src in self._dag.src:
-        #     for succ in self._dag.successors(src):
-        #         if self._dag.nodes[succ].trigger_edge == src:
-        #             trigger_timer_node.append(src)
-        #             break
-        
-        # #入口ノードがトリガエッジでない場合
-        # if len(trigger_timer_node) == 0:
-        #     for node in self._timer_nodes:
-        #         if node.timer_flag is True and node.id not in self._dag.src:
-        #             for succ in self._dag.successors(node.id):
-        #                 if self._dag.nodes[succ].trigger_edge == node.id:
-        #                     trigger_timer_node.append(node.id)
-        #                     break
-        
-        # #選んだタイマノードの中で、周期が最も大きいものを選ぶ
-        # max_period = 0
-        # max_period_id = None
-        # for id in trigger_timer_node:
-        #     if self._dag.nodes[id].period > max_period:
-        #         max_period = self._dag.nodes[id].period
-        #         max_period_id = id
-        
+
         node_id = self._dag.snk[0]
         response_time = 0
         is_finish = False
@@ -301,6 +278,100 @@ class Simulator():
             
             node_id = self._dag.nodes[node_id].trigger_edge
             assert node_id is not None
+    
+    # 修論用
+    def _calc_response_time_2(self):
+        
+        
+        assert self._largest_path is not None or self._allocate_cores == self._total_core_num
+
+
+        response_time = 0
+        response_time_c = 0
+        # 追加のコアが割り当てられなかった場合は、比較を行わない
+        if self._largest_path is None and self._allocate_cores == self._total_core_num:
+            return None, None
+        # print(self._largest_path)
+
+
+        snk_id = self._dag.snk[0]
+
+        #最新のスタートタイムを取得
+        start_time = self._dag.nodes[snk_id].start_time[-1]
+        time_index = None
+
+        # print(self._largest_path)
+
+        list_id = len(self._largest_path) - 1
+
+        # for id in self._largest_path:
+        #     for start, finish in zip(self._dag.nodes[id].start_time, self._dag.nodes[id].finish_time):
+        #         print("node_id = "+str(id)+", start = "+str(start)+", finish = "+str(str(finish)))
+
+        for node_id in reversed(self._largest_path):
+            # print("now node_id = "+str(node_id)+", now list_id = "+str(list_id))
+            # print("id = "+str(id)+" c_for = "+str(self._dag.nodes[id].c_for_respo)+", c = "+str(self._dag.nodes[id].c)+", req = "+str(self._dag.nodes[id].require_core_num))
+            if node_id in self._dag.src:
+                assert time_index is not None
+                if self._dag.nodes[node_id].c_for_respo[time_index] is None:
+                    return None, None
+                response_time += self._dag.nodes[node_id].c_for_respo[time_index]
+                response_time_c += self._dag.nodes[node_id].c_for_respo[time_index]
+                list_id -= 1
+
+                # print("node_id = "+str(node_id)+", start = "+str(start_time)+", pre_ft = "+str(str(ft)))
+                # print("active_num="+str(self._dag.nodes[node_id].activate_num))
+
+                # print("node_id = "+str(node_id)+", respo = "+str(response_time))
+
+            
+            else:
+                if node_id == snk_id:
+                    time_index = self._dag.nodes[snk_id].start_time.index(start_time)
+
+                assert time_index is not None
+
+                # print("be="+str(time_index))
+                # print(node_id)
+                # print(self._dag.nodes[node_id].start_time)
+                start_time = self._dag.nodes[node_id].start_time[time_index]
+                c_for_respo = self._dag.nodes[node_id].c_for_respo[time_index]
+                if c_for_respo is None:
+                    return None, None
+                
+                pre_max_ft = -1
+                pre_time_index = None
+
+                pre_node_id = self._largest_path[list_id-1]
+                for id, ft in enumerate(self._dag.nodes[pre_node_id].finish_time):
+                    # print("node_id = "+str(node_id)+", ft = "+str(ft))
+                    if ft <= start_time and ft > pre_max_ft:
+                        pre_max_ft = ft
+                        pre_time_index = id
+                
+                if pre_time_index is None:
+                    print("pre_time_index is None")
+                    return None, None
+                response_time += c_for_respo + (start_time - pre_max_ft)
+                response_time_c += c_for_respo
+                # print("node_id = "+str(node_id)+", start = "+str(start_time)+", ft = "+str(str(pre_max_ft)))
+                time_index = pre_time_index
+                list_id -= 1
+
+                # print(self._dag.nodes[pre_node_id].finish_time)
+                # print(self._dag.nodes[pre_node_id].start_time)
+                # print(pre_node_id)
+                # print("af="+str(time_index))
+
+             
+             
+                # 待ち時間を考慮
+                # response_time += self._dag.nodes[id].c_for_respo + (self._dag.nodes[id].start_time - self._dag.nodes[pre_job_id].FT)
+                # print(self._dag.nodes[id].start_time - self._dag.nodes[pre_job_id].FT)
+                # # print("id = "+str(id)+", pre = "+str(pre_job_id)+", timer = "+str(self._dag.nodes[id].timer_flag) )
+                # assert (self._dag.nodes[id].start_time - self._dag.nodes[pre_job_id].FT) >= 0
+        
+        return response_time, response_time_c
 
 
     # 確保したコアが、どのクラスタ所属で、そのクラスタで何番目のコアかを調べる
@@ -437,9 +508,15 @@ class Simulator():
 
     #修論用
 
-    def _core_allocation_by_okamu(self):
-        total_parallel_cores = 0
+    def _core_allocation_by_okamu(self) -> bool:
         nth_path = 1
+        total_parallel_cores = self._allocate_to_under_period()
+        self._allocate_cores = total_parallel_cores
+
+        #割り当て失敗の場合、スケジューリング終了
+        if total_parallel_cores is None:
+            return False
+
         while(total_parallel_cores < self._total_core_num):
             # print("total_parallel_cores = "+str(total_parallel_cores))
             max_wcet = -1
@@ -478,12 +555,23 @@ class Simulator():
             else:
                 total_parallel_cores += 1
                 self._dag.nodes[max_id].require_core_num += 1 
+            # print("id="+str(max_id)+", req = "+str(self._dag.nodes[max_id].require_core_num))
 
+        
+        #割り当て成功
+        return True
 
-    def _core_allocation_by_yutaro(self):
-        total_parallel_cores = 0
+    def _core_allocation_by_yutaro(self) -> bool:
         nth_path = 1
+        total_parallel_cores = self._allocate_to_under_period()
+        self._allocate_cores = total_parallel_cores
+
+        #割り当て失敗の場合、スケジューリング終了
+        if total_parallel_cores is None:
+            return False
+        
         while(total_parallel_cores < self._total_core_num):
+            # print(total_parallel_cores)
             max_path = self._req_max_path(nth_path)
             selected_id = self._reduction_effectiveness_method(max_path) 
             while selected_id is None:
@@ -499,12 +587,52 @@ class Simulator():
             else:
                 total_parallel_cores += 1
                 self._dag.nodes[selected_id].require_core_num += 1 
+            # print("id="+str(selected_id)+", req = "+str(self._dag.nodes[selected_id].require_core_num))
+        
+        #割り当て成功
+        return True
+    
+    
+    def _require(self, node):
+        wcet_n = node.c
+        req_core_num = 1
+
+        while wcet_n > node.period:
+            req_core_num += 1
+            wcet_n = self._req_parallel_ex_time(node, req_core_num)
+            if req_core_num > self._total_core_num:
+                break
+        
+        # print(req_core_num)
+        # print("node.k="+str(node.k)+", period="+str(node.period)+", wcet_n="+str(wcet_n)+", wcet_1="+str(node.c))
+
+        return req_core_num
+    
+    def _allocate_to_under_period(self): 
+        total_parallel_cores = 0
+
+        for node in self._dag.nodes:
+            if node.c / node.period < 1 or node.k == 0:
+                continue
+            req_cores = self._require(node)
+            total_parallel_cores += req_cores
+            node.require_core_num = req_cores
+            # print(total_parallel_cores)
+        
+
+        if total_parallel_cores > self._total_core_num:
+            return None
+        else:
+            return total_parallel_cores
+
+
+
     
 
     def _reduction_effectiveness_method(self, path: list[int]):
 
         selected_id = None
-        tmp_reduction_diff = -1
+        tmp_reduction_diff = 0
         total_diff = 0
         # print(path)
         for id in path:
@@ -631,6 +759,12 @@ class Simulator():
                     # print("max_value = "+str(length))
                     # print("max_path = "+str(max_respo_chain))
         # print(max_respo_chain)
+    
+        if n == 1 and self._largest_path is None:
+            self._largest_path = path_sums[nth_path-1][0]
+            # print(self._largest_path)
+            # for n in self._largest_path:
+            #     print("n="+str(n))
         return path_sums[nth_path-1][0]
 
 

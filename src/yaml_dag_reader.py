@@ -15,7 +15,11 @@ class YamlDagReader:
 
         index = [n["id"] for n in sorted(nodes_yaml, key=lambda x: x["id"])]
 
-        periods = [n["Period"]*10 for n in sorted(nodes_yaml, key=lambda x: x["id"])]
+        # 修論（コア割り当て用）
+        periods = [n["Period"] for n in sorted(nodes_yaml, key=lambda x: x["id"])]
+
+        # IEEE Access（クラスタ選択用）
+        # periods = [n["Period"]*10 for n in sorted(nodes_yaml, key=lambda x: x["id"])]
 
         # deadlineを取ってくる
         for n in nodes_yaml:
