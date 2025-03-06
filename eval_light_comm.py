@@ -12,7 +12,7 @@ import networkx
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 200
+dag_num = 30
 frag = 0
 firstR_list = []
 R_list = []
@@ -53,12 +53,12 @@ sp_node_id = 0
 
 
 deadline_ratio = 0.5
-cluster_nums = [5, 8, 10, 20]
-cluster_total_cores = [80, 120, 160]
+cluster_nums = [20]
+cluster_total_cores = [80]
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'result/comm_light_{method_name}.txt', 'w') as f:
+    with open(f'result/test{method_name}.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -85,7 +85,7 @@ for method_name in methods:
                         # cluster_num = 5
                         # cluster_core_num = 16
                         # deadline_ratio = 0.8
-                        simulator = Simulator(dag, cluster_num, cluster_core_num, cc_time_ratio, method_name)
+                        simulator = Simulator(dag, cluster_num, cluster_core_num, cc_time_ratio, method_name, path_allocate_threshold=20)
                         ave_response_time = simulator.Scheduling(task_name="light")
 
                         # scheduler = Scheduler2(dag, cluster_num, cluster_core_num, sp_node_id, deadline_ratio, cc_time_ratio, heavy_task_num=4, consider_compute_core=True)
@@ -137,8 +137,8 @@ for method_name in methods:
                     # print("average_intra_comm_occur_num = "+ str(sum(intra_comm_occur_num)/ len(intra_comm_occur_num)))
                     # print("max_respo_ave = "+str(sum(response_times) / len(response_times)))
 
-                    # print("total_inter_comm = "+str(inter_cc_cost))
-                    # print("total_intra_comm = "+str(intra_cc_cost))
+                    print("total_inter_comm = "+str(inter_cc_cost))
+                    print("total_intra_comm = "+str(intra_cc_cost))
                     # print("len(intra_cc_cost) = "+str(len(intra_cc_cost)))
                     # print("len(intra_core_num) = "+str(len(intra_core_num)))
                     # print("average_intra_comm_num = "+str(intra_core_num))

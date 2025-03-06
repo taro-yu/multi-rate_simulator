@@ -12,6 +12,7 @@ class Simulator():
             cluster_core_num: int,
             cluster_comm_ratio: float,
             method_name: str, # proposed, greedy, best, EFT
+            path_allocate_threshold: int,
             heavy_task_num: int | None = None,
     ):
         # 基本パラメータ
@@ -48,7 +49,16 @@ class Simulator():
 
         # 修論用
         self._task_map = [[] for n in range(self._total_core_num) ]
-        self._parallel_num_threshold = 10
+
+        #一ノードの割り当て上限
+        self._parallel_num_threshold = path_allocate_threshold
+
+        #一パスの割り当て上限
+        self._path_allocate_threshold = path_allocate_threshold
+
+        self._paths = []
+        self._paths_cores = []
+
         self._largest_path = None
         self._allocate_cores = 0
     
@@ -70,6 +80,10 @@ class Simulator():
                 return False
         elif task_name == "yutaro":
             result = self._core_allocation_by_yutaro()
+            if result is False:
+                return False
+        elif task_name == "random":
+            result = self._core_allocation_by_random()
             if result is False:
                 return False
 
@@ -100,6 +114,7 @@ class Simulator():
         for node in self._dag.nodes:
             if node.timer_flag is True:
                 self._timer_nodes.append(node)
+                self._dag.nodes[node.id].activate_num = 1
                 new_job = self._dag.make_new_job(node)
                 new_job.release_time = self._sim_time
                 self._wait_queue.append(new_job)
@@ -108,8 +123,12 @@ class Simulator():
         # シミュレーション開始
         snk_id = self._dag.snk[0]
 
+        # for node in self._dag.nodes:
+        #     if node.id == 15 or node.id == 16 or node.id == 21:
+        #           print("id = "+str(node.id)+", trige = "+str(node.trigger_edge))
+
         # HPまでやるか、少なくとも一回は出口ノードがfinishするか
-        while self._sim_time <= HP or len(self._dag.nodes[snk_id].finish_time) == 0:
+        while self._sim_time <= 20*HP or len(self._dag.nodes[snk_id].finish_time) == 0:
 
             # 実行が完了したノードの対応
             finish_jobs = []
@@ -119,7 +138,6 @@ class Simulator():
                 if ex_job.finish is True:
                     finish_jobs.append(ex_list_id)
                     self._dag.nodes[ex_job.id].finish_time = self._sim_time         
-                    self._dag.nodes[ex_job.id].activate_num = 1
                     # self._dag.nodes[ex_job.id].FT = self._sim_time
                     # print("job_id = "+str(ex_job.id)+" ex_job.c = "+ str(ex_job.c))
 
@@ -135,6 +153,7 @@ class Simulator():
                             if self._dag.nodes[succ].trigger_edge != ex_job.id:
                                 continue
                             else:
+                                self._dag.nodes[succ].activate_num = 1
                                 new_job = self._dag.make_new_job(self._dag.nodes[succ])
                                 new_job.release_time = self._sim_time
                                 self._wait_queue.append(new_job)
@@ -165,7 +184,8 @@ class Simulator():
             if self._sim_time != 0:
                 for timer_node in self._timer_nodes:
                     if self._sim_time % timer_node.period == 0:
-                        timer_node.activate_num = 1
+                        self._dag.nodes[timer_node.id].activate_num = 1
+                        # timer_node.activate_num = 1
                         new_job = self._dag.make_new_job(timer_node)
                         new_job.release_time = self._sim_time
                         self._wait_queue.append(new_job)
@@ -209,9 +229,19 @@ class Simulator():
 
                     # クラスタ間通信の時間を追加 (job.cにcomm_timeを追加するため、self._new_wcetよりも後に実行)
                     self._add_cc_comm_time(wait_job)
+
                     
                     # 実行中リストに追加 & waitキューから除外
+                    # for job in self._execution_list:
+                    #     if wait_job.id == job.id and wait_job.laxity == job.laxity:
+                    #         print("sim = "+str(self._sim_time))
                     self._execution_list.append(wait_job)
+                    # if self._sim_time >= 800 and self._sim_time <= 805:
+                    #     for job in self._execution_list:
+                    #         print("job_id = "+str(job.id)+", laxity = "+str(job.laxity)+", activate_num = "+str(job.activate_num))
+                    #     print("len = "+str(len(self._execution_list)))
+                    #     print("\n")
+
 
 
                     # 並列実行時間＋クラスタ間通信＋待ち時間を応答時間算出のために定義
@@ -241,6 +271,7 @@ class Simulator():
                 else:
                     ex_job.c = -1
         # print("count = "+str(self._count))
+        # print(self._response_times)
 
     def _release_cores(self, ex_job: Node):
         self._dag.nodes[ex_job.id].allocated_cores_clear()
@@ -288,11 +319,15 @@ class Simulator():
 
         response_time = 0
         response_time_c = 0
+        wait_time = 0
+        for_respo = 0
         # 追加のコアが割り当てられなかった場合は、比較を行わない
         if self._largest_path is None and self._allocate_cores == self._total_core_num:
             return None, None
         # print(self._largest_path)
 
+        # for id in self._largest_path:
+        #     print("id = "+str(id)+", node.req = "+str(self._dag.nodes[id].c_for_respo))
 
         snk_id = self._dag.snk[0]
 
@@ -304,9 +339,12 @@ class Simulator():
 
         list_id = len(self._largest_path) - 1
 
-        # for id in self._largest_path:
-        #     for start, finish in zip(self._dag.nodes[id].start_time, self._dag.nodes[id].finish_time):
-        #         print("node_id = "+str(id)+", start = "+str(start)+", finish = "+str(str(finish)))
+        # if len(self._dag.nodes[snk_id].finish_time) == 8:
+        #     for id in self._largest_path:
+        #         for start, finish in zip(self._dag.nodes[id].start_time, self._dag.nodes[id].finish_time):
+        #             print("node_id = "+str(id)+", start = "+str(start)+", finish = "+str(str(finish)))
+        #     print("\n")
+
 
         for node_id in reversed(self._largest_path):
             # print("now node_id = "+str(node_id)+", now list_id = "+str(list_id))
@@ -319,8 +357,9 @@ class Simulator():
                 response_time_c += self._dag.nodes[node_id].c_for_respo[time_index]
                 list_id -= 1
 
-                # print("node_id = "+str(node_id)+", start = "+str(start_time)+", pre_ft = "+str(str(ft)))
+                # print("node_id = "+str(node_id)+", start = "+str(start_time)+", ft = "+str(str(self._dag.nodes[node_id].finish_time[time_index])))
                 # print("active_num="+str(self._dag.nodes[node_id].activate_num))
+                # print("\n")
 
                 # print("node_id = "+str(node_id)+", respo = "+str(response_time))
 
@@ -350,11 +389,13 @@ class Simulator():
                         pre_time_index = id
                 
                 if pre_time_index is None:
-                    print("pre_time_index is None")
+                    # print("pre_time_index is None")
                     return None, None
+                # print("id = "+str(list_id)+", start = "+str(start_time)+", pre_max_finish = "+str(pre_max_ft)+", wait_time = "+str(start_time - pre_max_ft))
                 response_time += c_for_respo + (start_time - pre_max_ft)
                 response_time_c += c_for_respo
-                # print("node_id = "+str(node_id)+", start = "+str(start_time)+", ft = "+str(str(pre_max_ft)))
+                wait_time += (start_time - pre_max_ft)
+                # print("node_id = "+str(node_id)+", start = "+str(start_time)+", pre_ft = "+str(str(pre_max_ft)))
                 time_index = pre_time_index
                 list_id -= 1
 
@@ -370,7 +411,10 @@ class Simulator():
                 # print(self._dag.nodes[id].start_time - self._dag.nodes[pre_job_id].FT)
                 # # print("id = "+str(id)+", pre = "+str(pre_job_id)+", timer = "+str(self._dag.nodes[id].timer_flag) )
                 # assert (self._dag.nodes[id].start_time - self._dag.nodes[pre_job_id].FT) >= 0
-        
+        # print("respo = "+str(response_time))
+        # print("c_for_respo = "+str(response_time_c))
+        # print("wait_time = "+str(wait_time))
+        # print("\n")
         return response_time, response_time_c
 
 
@@ -508,6 +552,36 @@ class Simulator():
 
     #修論用
 
+    def _core_allocation_by_random(self) -> bool:
+        total_parallel_cores = self._allocate_to_under_period()
+        self._allocate_cores = total_parallel_cores
+
+        #割り当て失敗の場合、スケジューリング終了
+        if total_parallel_cores is None:
+            return False
+        
+        seed_node = 1
+        max_path = self._req_max_path(1)
+        # print(total_parallel_cores)
+
+        while(total_parallel_cores < self._total_core_num):
+            
+            random.seed(seed_node)
+            node_id = random.randint(0, len(self._dag.nodes)-1) 
+            # require_core_num = 
+            if self._dag.nodes[node_id].require_core_num == 1:
+                total_parallel_cores += 2
+                self._dag.nodes[node_id].require_core_num += 1
+            else:
+                total_parallel_cores += 1
+                self._dag.nodes[node_id].require_core_num += 1 
+      
+            seed_node += 1
+                
+        #割り当て成功
+        return True
+
+
     def _core_allocation_by_okamu(self) -> bool:
         nth_path = 1
         total_parallel_cores = self._allocate_to_under_period()
@@ -519,42 +593,33 @@ class Simulator():
 
         while(total_parallel_cores < self._total_core_num):
             # print("total_parallel_cores = "+str(total_parallel_cores))
-            max_wcet = -1
+            max_wcrt = -1
             max_id = None
             while max_id is None:
                 max_path = self._req_max_path(nth_path)
                 # print(max_path)
-                max_wcet = -1
-                for id in max_path:
-                    wcet_n = self._req_parallel_ex_time(
-                        self._dag.nodes[id],
-                        self._dag.nodes[id].require_core_num
-                    )
-                    # print(self._dag.nodes[id].k)
-                    # print("wcet="+str(wcet_n))
-
-                    if wcet_n > max_wcet and self._dag.nodes[id].k != 0 and \
-                                self._dag.nodes[id].require_core_num+1 <= self._parallel_num_threshold:
-                        max_wcet = wcet_n
-                        max_id = id
-                        # print(wcet_n)
-                        # print(self._dag.nodes[id].k)
-                        # print(max_id)
-                        # print(self._dag.nodes[max_id].require_core_num)
-
-                if max_id is None:
-                    # print(self._dag.nodes[max_id].k)
-                    # max_id = None
-                    nth_path += 1
-                    
-            # print("max_wcrt = "+str(max_wcet))
-            # print("max_id = "+str(max_id))
-            if self._dag.nodes[max_id].require_core_num == 1:
-                total_parallel_cores += 2
-                self._dag.nodes[max_id].require_core_num += 1
-            else:
-                total_parallel_cores += 1
-                self._dag.nodes[max_id].require_core_num += 1 
+                max_wcrt = -1
+                if max_path is None:
+                    return True
+                else:
+                    for id in max_path:
+                        wcrt = self._calc_node_wcrt(self._dag.nodes[id])
+                        if wcrt > max_wcrt:
+                            max_wcrt = wcrt
+                            max_id = id
+                    # if max_id is None:
+                    #     # print(self._dag.nodes[max_id].k)
+                    #     # max_id = None
+                    #     nth_path += 1
+                        
+                # print("max_wcrt = "+str(max_wcet))
+                # print("max_id = "+str(max_id))
+                if self._dag.nodes[max_id].require_core_num == 1:
+                    total_parallel_cores += 2
+                    self._dag.nodes[max_id].require_core_num += 1
+                else:
+                    total_parallel_cores += 1
+                    self._dag.nodes[max_id].require_core_num += 1 
             # print("id="+str(max_id)+", req = "+str(self._dag.nodes[max_id].require_core_num))
 
         
@@ -570,9 +635,11 @@ class Simulator():
         if total_parallel_cores is None:
             return False
         
+        # print(total_parallel_cores)
         while(total_parallel_cores < self._total_core_num):
             # print(total_parallel_cores)
             max_path = self._req_max_path(nth_path)
+            
             selected_id = self._reduction_effectiveness_method(max_path) 
             while selected_id is None:
                 nth_path += 1
@@ -588,7 +655,6 @@ class Simulator():
                 total_parallel_cores += 1
                 self._dag.nodes[selected_id].require_core_num += 1 
             # print("id="+str(selected_id)+", req = "+str(self._dag.nodes[selected_id].require_core_num))
-        
         #割り当て成功
         return True
     
@@ -744,6 +810,9 @@ class Simulator():
         for s in self._dag.src:
             for d in self._dag.snk:
                 for path in list(networkx.all_simple_paths(self._dag.G, s, d)):
+                    if n == 1 and self._largest_path is None:
+                        self._paths.append(path)
+                        self._paths_cores.append(0)
                     # print("s = "+str(s)+"d = "+str(d))
                     tmp_length = 0
                     for i in path:
@@ -755,16 +824,20 @@ class Simulator():
                             period_i = 0
                         tmp_length += wcrt_i + period_i
                     path_sums.append((path, tmp_length))
-        path_sums.sort(key=lambda x: x[1])
+        path_sums.sort(key=lambda x: x[1], reverse=True)
                     # print("max_value = "+str(length))
                     # print("max_path = "+str(max_respo_chain))
         # print(max_respo_chain)
     
         if n == 1 and self._largest_path is None:
+            if nth_path > len(path_sums):
+                return None
             self._largest_path = path_sums[nth_path-1][0]
             # print(self._largest_path)
             # for n in self._largest_path:
-            #     print("n="+str(n))
+            #     print("n="+str(n))]
+        # for path in reversed(path_sums):
+        #     print("path = "+str(path_sums[nth_path-1][0])+", path_wcrt = "+str(path_sums[nth_path-1][1]))
         return path_sums[nth_path-1][0]
 
 

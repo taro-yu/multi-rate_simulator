@@ -12,7 +12,7 @@ import networkx
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 50
+dag_num = 200
 frag = 0
 firstR_list = []
 R_list = []
@@ -56,12 +56,13 @@ sp_node_id = 0
 
 deadline_ratio = 0.5
 cluster_nums = [5]
-# cluster_total_cores = [80, 100, 120, 140, 160, 180, 200]
-cluster_total_cores = [80]
+# cluster_total_cores = [120, 140, 160, 180, 200]
+cluster_total_cores = [100]
+path_allocate_threshold = 20
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'okamu_{method_name}.txt', 'w') as f:
+    with open(f'okamu_new_4_{method_name}.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -75,11 +76,12 @@ for method_name in methods:
                 response_times_for_hako = []
                 response_times_for_hako_c = []
 
-                for m in range(40, 61, 20):
+                for m in range(40, 121, 20):
+                # for m in range(60, 61, 20):
                     for n in range(dag_num):
                         # print(n)
                         print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        # n=64
+                        # n = 64
                         reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG"+str(m)+"/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
@@ -91,7 +93,7 @@ for method_name in methods:
                         # cluster_num = 5
                         # cluster_core_num = 16
                         # deadline_ratio = 0.8
-                        simulator = Simulator(dag, cluster_num, cluster_core_num, cc_time_ratio, method_name)
+                        simulator = Simulator(dag, cluster_num, cluster_core_num, cc_time_ratio, method_name, path_allocate_threshold)
                         ave_response_time = simulator.Scheduling(task_name='okamu')
 
                         # scheduler = Scheduler2(dag, cluster_num, cluster_core_num, sp_node_id, deadline_ratio, cc_time_ratio, heavy_task_num=4, consider_compute_core=True)
@@ -102,7 +104,7 @@ for method_name in methods:
                         #     print("dag_number = "+str(n))
                         if ave_response_time is True:
                             R_list.append(ave_response_time)
-                            print("True")
+                            # print("True")
 
                             #今回は率を計算するため、トータルの回数で割っている
                             # print(scheduler._total_comm_within_node)
@@ -131,7 +133,7 @@ for method_name in methods:
                                 max_respo_c = max(simulator._response_times_c)
                                 response_times.append(max_respo)
                                 response_times_c.append(max_respo_c)
-                                print("max_respo = "+str(max_respo)+", max_respo_c = "+str(max_respo_c))
+                                # print("max_respo = "+str(max_respo)+", max_respo_c = "+str(max_respo_c))
 
                                 
                             # print(simulator._response_times)
@@ -145,6 +147,9 @@ for method_name in methods:
 
                     response_times_for_hako.append(response_times)
                     response_times_for_hako_c.append(response_times_c)
+                    id = int(m//20-2)
+                    print(response_times_for_hako[id])
+
                     # success_ratio = sum(success_flags)/dag_num
                     # ave_list_intra.append(sum(intra_cc_cost) / dag_num)
                     # ave_list_inter.append(sum(inter_cc_cost) / dag_num)

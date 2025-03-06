@@ -12,7 +12,7 @@ import networkx
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 200
+dag_num = 30
 frag = 0
 firstR_list = []
 R_list = []
@@ -25,9 +25,9 @@ response_times = []
 success_flags = []
 success_ratios = []
 # methods = ['EFT']
-# methods = ['proposed', 'best', 'greedy', 'EFT']
+methods = ['proposed', 'best', 'greedy', 'EFT']
 
-methods = ['proposed']
+# methods = ['proposed']
 # methods = ['best']
 # # methods = ['greedy']
 # methods = ['proposed', 'greedy']
@@ -53,7 +53,7 @@ sp_node_id = 0
 
 
 deadline_ratio = 0.5
-cluster_nums = [5]
+cluster_nums = [20]
 cluster_total_cores = [80]
 
 for method_name in methods:
@@ -69,7 +69,7 @@ for method_name in methods:
                 success_flags = []
                 ave_list_respo = []
                 ave_success_ratio = []
-                for m in range(40, 81, 20):
+                for m in range(40, 121, 20):
                     for n in range(dag_num):
                         # print(n)
                         print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
@@ -85,8 +85,10 @@ for method_name in methods:
                         # cluster_num = 5
                         # cluster_core_num = 16
                         # deadline_ratio = 0.8
+                        # simulator = Simulator(dag, cluster_num, cluster_core_num, cluster_comm_ratio=cluster_comm_ratio, method_name=method_name, heavy_task_num=5)
+
                         simulator = Simulator(dag, cluster_num, cluster_core_num, cc_time_ratio, method_name)
-                        ave_response_time = simulator.Scheduling(task_name='okamu')
+                        ave_response_time = simulator.Scheduling(task_name='light')
 
                         # scheduler = Scheduler2(dag, cluster_num, cluster_core_num, sp_node_id, deadline_ratio, cc_time_ratio, heavy_task_num=4, consider_compute_core=True)
                         # ave_response_time = scheduler.Scheduling(n, task_name="heavy")

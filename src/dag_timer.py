@@ -13,7 +13,7 @@ class Node:
         period: int,
         seed: int,
         require_core_num: int = 1,
-        activate_num: int = 1 ,
+        activate_num: int = 0 ,
         trigger_edge: int | None = None,
         timer_flag: bool = False,
         laxity: int = 0,
@@ -65,8 +65,8 @@ class Node:
         # timer_driven_nodeかの判定フラグ
         self._timer_flag = timer_flag
 
-        # 何番目のジョブか
-        self._activate_num = 1
+        # # 何番目のジョブか
+        # self._activate_num = 1
 
         #前に確保したコアの情報を保存
         self._allocated_cores = []
