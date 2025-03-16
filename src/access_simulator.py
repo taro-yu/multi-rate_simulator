@@ -1,4 +1,4 @@
-from .dag_timer import DAG, Node
+from .access_dag_timer import DAG, Node
 from itertools import combinations
 from .cluster_selection import ClusterSlectionMethods
 import math, copy, random, networkx
@@ -12,7 +12,7 @@ class Simulator():
             cluster_core_num: int,
             cluster_comm_ratio: float,
             method_name: str, # proposed, greedy, best, EFT
-            path_allocate_threshold: int,
+            seed: int,
             heavy_task_num: int | None = None,
     ):
         # 基本パラメータ
@@ -50,11 +50,9 @@ class Simulator():
         # 修論用
         self._task_map = [[] for n in range(self._total_core_num) ]
 
-        #一ノードの割り当て上限
-        self._parallel_num_threshold = path_allocate_threshold
+        self._kobatomo_seed = seed
 
-        #一パスの割り当て上限
-        self._path_allocate_threshold = path_allocate_threshold
+
 
         self._paths = []
         self._paths_cores = []
@@ -70,10 +68,12 @@ class Simulator():
         ):
         
 
-        if task_name == "heavy":
+        if task_name == "heavy" and self._method_name != "kobatomo":
             self._decide_require_core_num_heavy(self._heavy_task_num)
-        elif task_name == "light":
+        elif task_name == "light" and self._method_name != "kobatomo":
             self._decide_require_core_num_light()
+        
+        #以下修論用
         elif task_name == "okamu":
             result = self._core_allocation_by_okamu()
             if result is False:
@@ -82,11 +82,11 @@ class Simulator():
             result = self._core_allocation_by_yutaro()
             if result is False:
                 return False
-        elif task_name == "random":
-            result = self._core_allocation_by_random()
-            if result is False:
-                return False
-
+        elif task_name == "light" and self._method_name == "kobatomo":
+            result = self._core_allocation_by_okamu(task_name)
+        elif task_name == "heavy" and self._method_name == "kobatomo":
+            result = self._core_allocation_by_okamu(task_name)
+        
         self._simulator(self._method_name, task_name)
 
         return True
@@ -101,7 +101,12 @@ class Simulator():
     ):
         HP = self._dag._calc_HP()
         self._dag._allocate_period_from_src()
-        cluster_selector = ClusterSlectionMethods()
+        cluster_selector = ClusterSlectionMethods(self._kobatomo_seed)
+
+        
+
+
+
         # print(HP)
 
         # total = 0
@@ -125,7 +130,7 @@ class Simulator():
 
 
         # HPまでやるか、少なくとも一回は出口ノードがfinishするか
-        while self._sim_time <= 20*HP or len(self._dag.nodes[snk_id].finish_time) == 0:
+        while self._sim_time <= HP or self._dag.nodes[snk_id].finish_time == 0:
 
             # 実行が完了したノードの対応
             finish_jobs = []
@@ -152,17 +157,10 @@ class Simulator():
                     # 出口ノードが終了したら、終了時間を求め、応答時間を算出
                     if ex_job.id in self._dag.snk:
                         # FTは、最終ノードが終わるまでシミュレーションを行うための仕組み
-                        if task_name == 'okamu' or 'yutaro':
-                            response_time, response_time_c = self._calc_response_time_2()
-                            if response_time is not None:
-                                self._response_times.append(response_time)
-                                self._response_times_c.append(response_time_c)
-
-                        else:
-                            response_time, response_time_c = self._calc_response_time()
-                            if response_time is not None:
-                                self._response_times.append(response_time)
-                                self._response_times_c.append(response_time_c)
+                        response_time = self._calc_response_time()
+                        if response_time is not None:
+                            self._response_times.append(response_time)
+                            # self._response_times_c.append(response_time_c)
                         # response_time = self._calc_response_time()
                         # if response_time is not None:
                         #     self._response_times.append(response_time)
@@ -181,7 +179,7 @@ class Simulator():
                         new_job.release_time = self._sim_time
                         self._wait_queue.append(new_job)
             
-            # 待ちキューをlaxityの値でソート
+            # 待ちキューをlaxityの値でソート 
             self._wait_queue.sort(key=lambda x: x.laxity)
 
 
@@ -223,26 +221,14 @@ class Simulator():
 
                     
                     # 実行中リストに追加 & waitキューから除外
-                    # for job in self._execution_list:
-                    #     if wait_job.id == job.id and wait_job.laxity == job.laxity:
-                    #         print("sim = "+str(self._sim_time))
                     self._execution_list.append(wait_job)
-                    # if self._sim_time >= 800 and self._sim_time <= 805:
-                    #     for job in self._execution_list:
-                    #         print("job_id = "+str(job.id)+", laxity = "+str(job.laxity)+", activate_num = "+str(job.activate_num))
-                    #     print("len = "+str(len(self._execution_list)))
-                    #     print("\n")
-
 
 
                     # 並列実行時間＋クラスタ間通信＋待ち時間を応答時間算出のために定義
-                    # if wait_job.id in self._largest_path:
-                        # print("id = "+str(wait_job.id)+"c = "+str(wait_job.c)+", wait_time = "+str(self._sim_time - wait_job.release_time))
-                    # self._dag.nodes[wait_job.id].c_for_respo = wait_job.c + (self._sim_time - wait_job.release_time)
-                    self._dag.nodes[wait_job.id].c_for_respo = wait_job.c
-                    self._dag.nodes[wait_job.id].start_time = self._sim_time
+                    self._dag.nodes[wait_job.id].c_for_respo = wait_job.c + (self._sim_time - wait_job.release_time)
+                    # self._dag.nodes[wait_job.id].c_for_respo = wait_job.c
+                    # self._dag.nodes[wait_job.id].start_time = self._sim_time
 
-                    assert len(self._dag.nodes[wait_job.id].c_for_respo) == len(self._dag.nodes[wait_job.id].start_time)
                     
                                          
 
@@ -532,6 +518,7 @@ class Simulator():
     def _decide_require_core_num_light(self):
         seed = 0
         # print("num_of_timer = "+str(self._dag.num_of_timer))
+        sum = 0
         for node in self._dag.nodes:
 
             random.seed(seed)
@@ -539,6 +526,9 @@ class Simulator():
             # require_core_num = 
             node.require_core_num = require_core_num
             seed += 1
+            sum += require_core_num
+        # print("sum = "+str(sum))
+
     
 
     #修論用
@@ -546,10 +536,6 @@ class Simulator():
     def _core_allocation_by_random(self) -> bool:
         total_parallel_cores = self._allocate_to_under_period()
         self._allocate_cores = total_parallel_cores
-
-        #割り当て失敗の場合、スケジューリング終了
-        if total_parallel_cores is None:
-            return False
         
         seed_node = 1
         max_path = self._req_max_path(1)
@@ -568,36 +554,42 @@ class Simulator():
                 self._dag.nodes[node_id].require_core_num += 1 
       
             seed_node += 1
-                
-        #割り当て成功
-        return True
+        
+        return 
 
 
-    def _core_allocation_by_okamu(self) -> bool:
+    def _core_allocation_by_okamu(self, task_name: str) -> bool:
         nth_path = 1
-        total_parallel_cores = self._allocate_to_under_period()
+        total_parallel_cores, total_core_num = self._allocate_to_under_period(task_name)
         self._allocate_cores = total_parallel_cores
 
-        #割り当て失敗の場合、スケジューリング終了
-        if total_parallel_cores is None:
-            return False
 
-        while(total_parallel_cores < self._total_core_num):
+
+
+        # print("total_parallel_cores = "+str(total_parallel_cores))
+        # print("total_core_num = "+str(total_core_num))
+
+        
+        while(total_parallel_cores < total_core_num):
             # print("total_parallel_cores = "+str(total_parallel_cores))
             max_wcrt = -1
             max_id = None
+            # print("total_parallel_cores = "+str(total_parallel_cores))
             while max_id is None:
                 max_path = self._req_max_path(nth_path)
                 # print(max_path)
                 max_wcrt = -1
                 if max_path is None:
-                    return True
+                    print("Error")
                 else:
                     for id in max_path:
                         wcrt = self._calc_node_wcrt(self._dag.nodes[id])
-                        if wcrt > max_wcrt:
+                        if wcrt > max_wcrt and self._dag.nodes[id].require_core_num < self._total_core_num:
                             max_wcrt = wcrt
                             max_id = id
+                    if max_wcrt == -1:
+                        nth_path += 1
+                        continue
                     # if max_id is None:
                     #     # print(self._dag.nodes[max_id].k)
                     #     # max_id = None
@@ -606,7 +598,7 @@ class Simulator():
                 # print("max_wcrt = "+str(max_wcet))
                 # print("max_id = "+str(max_id))
                 if self._dag.nodes[max_id].require_core_num == 1:
-                    total_parallel_cores += 2
+                    total_parallel_cores += 1
                     self._dag.nodes[max_id].require_core_num += 1
                 else:
                     total_parallel_cores += 1
@@ -614,6 +606,12 @@ class Simulator():
             # print("id="+str(max_id)+", req = "+str(self._dag.nodes[max_id].require_core_num))
 
         
+        sm = 0
+        for node in self._dag.nodes:
+            sm += node.require_core_num 
+        # print("sm5 = "+str(sm))
+
+        assert sm == total_parallel_cores
         #割り当て成功
         return True
 
@@ -665,22 +663,102 @@ class Simulator():
 
         return req_core_num
     
-    def _allocate_to_under_period(self): 
+    def _allocate_to_under_period(self, task_name: str) -> int: 
+        total_core_num = 0
         total_parallel_cores = 0
 
+        sm = 0
         for node in self._dag.nodes:
-            if node.c / node.period < 1 or node.k == 0:
+            sm += node.require_core_num 
+        # print("sm1 = "+str(sm))
+        # print("total_core_num1 = "+str(total_core_num))
+        # print("total_parallel_cores1 = "+str(total_parallel_cores))
+
+    
+        #light
+        if task_name == "light":
+            seed = 0
+            for n in range(len(self._dag.nodes)):
+                random.seed(seed)
+                require_core_num = random.randint(1, 9) 
+                # require_core_num = 
+                total_core_num += require_core_num
+                seed += 1
+        
+        sm = 0
+        for node in self._dag.nodes:
+            sm += node.require_core_num 
+        # print("sm2 = "+str(sm))
+        # print("total_core_num2 = "+str(total_core_num))
+        # print("total_parallel_cores2 = "+str(total_parallel_cores))
+
+
+
+        count = 0
+        for node in self._dag.nodes:
+            # print("util = "+str(float(node.c) / float(node.period)))
+            # print("util <= 1.0? = "+str(float(node.c) / float(node.period) <= 1.0))
+            # print("")
+            if float(node.c) / float(node.period) <= 1.0:
+                total_parallel_cores += 1
+                count += 1
+        sm = 0
+        for node in self._dag.nodes:
+            sm += node.require_core_num 
+        # print("sm3 = "+str(sm))
+        # print("total_core_num3 = "+str(total_core_num))
+        # print("total_parallel_cores3 = "+str(total_parallel_cores))
+
+        total_parallel_cores = sm
+
+
+        for node in self._dag.nodes:
+            if total_parallel_cores == total_core_num:
+                break
+            elif float(node.c) / float(node.period) <= 1.0:
                 continue
-            req_cores = self._require(node)
-            total_parallel_cores += req_cores
-            node.require_core_num = req_cores
-            # print(total_parallel_cores)
+            else:
+                req_cores = self._require(node)
+                # print("para="+str(total_parallel_cores)+", total="+str(total_core_num)+" req="+str(req_cores))
+                # sm = 0
+                # for node in self._dag.nodes:
+                    # print("node.req_core_num = "+str(node.require_core_num))
+                    # sm += node.require_core_num
+                # print("sum = "+str(sm))
+                if req_cores > self._core_threshold:
+                    req_cores = self._total_core_num
+                
+  
+                if total_parallel_cores + req_cores -1  > total_core_num:
+                    node.require_core_num = total_core_num - total_parallel_cores 
+                    total_parallel_cores += node.require_core_num -1 
+                    count += 1
+                else: 
+                    node.require_core_num = req_cores
+                    total_parallel_cores += req_cores -1
+                    count += 1
         
 
-        if total_parallel_cores > self._total_core_num:
-            return None
-        else:
-            return total_parallel_cores
+        sm = 0
+        for node in self._dag.nodes:
+            sm += node.require_core_num 
+        # print("sm4 = "+str(sm))
+        # print("total_core_num4 = "+str(total_core_num))
+        # print("total_parallel_cores4 = "+str(total_parallel_cores))
+
+
+        
+
+
+        # print("count = "+str(count))
+
+
+        
+
+        # if total_parallel_cores > self._total_core_num:
+        #     return None
+        # else:
+        return total_parallel_cores, total_core_num
 
 
 

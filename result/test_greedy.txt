@@ -1,0 +1,2 @@
+test_result_4_greedy_heav_false_5_16_intra=[119.1]
+test_result_4_greedy_heavy_false_5_16_inter=[331.5]

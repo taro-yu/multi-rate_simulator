@@ -2,11 +2,13 @@ from itertools import combinations
 from .dag_timer import DAG
 
 import copy
+import random
 
 class ClusterSlectionMethods():
     
-    def __init__(self):
-        pass
+    def __init__(self, kobatomo_seed: int):
+        self._seed_for_kobatomo_fit = kobatomo_seed
+
 
     # クラスタ選択を行う
     def select_clusters(
@@ -17,6 +19,7 @@ class ClusterSlectionMethods():
             cluster_remain_cores: list[int],
             cluster_remain_available: list[list[bool]],
             method_name: str #proposed, greedy, best, EFT
+            
     ) -> int | list[int] | None:
         # print("at select_cluster: node_id="+str(node_id))
         
@@ -38,6 +41,8 @@ class ClusterSlectionMethods():
             return self._greedy_fit(parameters)
         elif method_name == 'best':
             return self._best_fit_mix(parameters)
+        elif method_name == 'kobatomo':
+            return self._kobatomo_fit(parameters)
         else:
             return self._EFT(parameters)
         
@@ -244,6 +249,34 @@ class ClusterSlectionMethods():
             return self._best_fit(parameters)
         else:
             return self._min_fit(parameters)
+        
+    def _kobatomo_fit(
+            self,
+            parameters: list[DAG|int|list]
+        ) -> list[int]:   
+            require_core_num = parameters[2]
+            cluster_remain_cores = parameters[3]
+            cluster_remain_cores_copy = copy.deepcopy(cluster_remain_cores)
+            total_core_num = 0
+            selected_cluster_ids = []
+            
+            while total_core_num < require_core_num:
+                random.seed(self._seed_for_kobatomo_fit)
+                # print("seed = "+str(self._seed_for_kobatomo_fit))
+                selected_cluster_id = random.randint(0, len(cluster_remain_cores_copy)-1)
+                if cluster_remain_cores_copy[selected_cluster_id] != 0:
+                    selected_cluster_ids.append(selected_cluster_id)
+                    total_core_num += cluster_remain_cores_copy[selected_cluster_id]
+                    cluster_remain_cores_copy[selected_cluster_id] = 0
+                self._seed_for_kobatomo_fit += 1
+            
+            return selected_cluster_ids
+                
+
+
+
+
+
         
 
 

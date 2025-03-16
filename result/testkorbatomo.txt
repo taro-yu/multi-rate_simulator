@@ -1,0 +1,3 @@
+test_result_4_korbatomo_light_5_16_intra=[161.0]
+test_result_4_korbatomo_light_5_16_inter=[135.0]
+

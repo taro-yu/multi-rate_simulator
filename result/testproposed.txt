@@ -1,0 +1,3 @@
+test_result_4_proposed_light_20_8_intra=[246.78]
+test_result_4_proposed_light_20_8_inter=[406.76]
+

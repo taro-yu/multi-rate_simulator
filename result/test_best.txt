@@ -1,0 +1,2 @@
+test_result_4_best_heav_false_5_16_intra=[114.56666666666666]
+test_result_4_best_heavy_false_5_16_inter=[331.1666666666667]

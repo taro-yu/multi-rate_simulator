@@ -1,0 +1,2 @@
+test_result_4_EFT_heav_false_5_16_intra=[200.66666666666666]
+test_result_4_EFT_heavy_false_5_16_inter=[304.03333333333336]

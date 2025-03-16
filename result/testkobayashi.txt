@@ -1,0 +1,3 @@
+test_result_4_kobayashi_light_5_16_intra=[319.1333333333333]
+test_result_4_kobayashi_light_5_16_inter=[259.73333333333335]
+
