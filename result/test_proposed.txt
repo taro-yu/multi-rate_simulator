@@ -1,0 +1,2 @@
+test_result_4_proposed_heav_false_5_16_intra=[40.6]
+test_result_4_proposed_heavy_false_5_16_inter=[118.6]

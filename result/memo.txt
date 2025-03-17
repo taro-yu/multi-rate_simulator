@@ -1,0 +1,12 @@
+cd multi-rate_simulator
+cd wd/multi-rate_simulator
+
+
+python3 access_light_comm_5.py
+python3 access_light_comm_8.py
+python3 access_light_comm_10.py
+python3 access_light_comm_20.py
+python3 access_heavy_comm_5.py
+python3 access_heavy_comm_8.py
+python3 access_heavy_comm_10.py
+python3 access_heavy_comm_20.py

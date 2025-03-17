@@ -269,7 +269,7 @@ class ClusterSlectionMethods():
                     total_core_num += cluster_remain_cores_copy[selected_cluster_id]
                     cluster_remain_cores_copy[selected_cluster_id] = 0
                 self._seed_for_kobatomo_fit += 1
-            
+            # print("selected_cluster_ids = "+str(selected_cluster_ids))
             return selected_cluster_ids
                 
 

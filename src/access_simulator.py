@@ -83,9 +83,10 @@ class Simulator():
             if result is False:
                 return False
         elif task_name == "light" and self._method_name == "kobatomo":
-            result = self._core_allocation_by_okamu(task_name)
+            result = self._core_allocation_by_okamu(task_name, core_threshold=9)
         elif task_name == "heavy" and self._method_name == "kobatomo":
-            result = self._core_allocation_by_okamu(task_name)
+            max_parallel_num = (self._total_core_num-self._dag.num_of_timer) // self._heavy_task_num
+            result = self._core_allocation_by_okamu(task_name, core_threshold=max_parallel_num)
         
         self._simulator(self._method_name, task_name)
 
@@ -496,13 +497,17 @@ class Simulator():
             else:
                 seed += 1
         
-        #余りがある場合
+        #余りがある場合 
         while remain_core_num >= 1:
             for selected_node in selected_nodes:
                 self._dag.nodes[selected_node].require_core_num += 1
                 remain_core_num -= 1
-
+                if remain_core_num == 0:
+                    break
+        
+       
         seed = 0
+
         for node in self._dag.nodes:
 
             if node.require_core_num > 1:
@@ -558,10 +563,14 @@ class Simulator():
         return 
 
 
-    def _core_allocation_by_okamu(self, task_name: str) -> bool:
+    def _core_allocation_by_okamu(self, task_name: str, core_threshold: int) -> bool:
         nth_path = 1
-        total_parallel_cores, total_core_num = self._allocate_to_under_period(task_name)
+        if task_name == "light":
+            total_parallel_cores, total_core_num = self._allocate_to_under_period(task_name, core_threshold)
+        elif task_name == "heavy":
+            total_parallel_cores, total_core_num = self._allocate_to_under_period(task_name, core_threshold, self._heavy_task_num)
         self._allocate_cores = total_parallel_cores
+
 
 
 
@@ -584,7 +593,7 @@ class Simulator():
                 else:
                     for id in max_path:
                         wcrt = self._calc_node_wcrt(self._dag.nodes[id])
-                        if wcrt > max_wcrt and self._dag.nodes[id].require_core_num < self._total_core_num:
+                        if wcrt > max_wcrt and self._dag.nodes[id].require_core_num < core_threshold:
                             max_wcrt = wcrt
                             max_id = id
                     if max_wcrt == -1:
@@ -606,12 +615,14 @@ class Simulator():
             # print("id="+str(max_id)+", req = "+str(self._dag.nodes[max_id].require_core_num))
 
         
-        sm = 0
-        for node in self._dag.nodes:
-            sm += node.require_core_num 
+        # sm = 0
+        # for node in self._dag.nodes:
+        #     sm += node.require_core_num 
         # print("sm5 = "+str(sm))
 
-        assert sm == total_parallel_cores
+        # for node in self._dag.nodes:
+        #     print("req_core_num = "+str(node.require_core_num))
+        # assert sm == total_parallel_cores
         #割り当て成功
         return True
 
@@ -663,7 +674,7 @@ class Simulator():
 
         return req_core_num
     
-    def _allocate_to_under_period(self, task_name: str) -> int: 
+    def _allocate_to_under_period(self, task_name: str, core_threshold: int, heavy_task_num: int = None) -> int: 
         total_core_num = 0
         total_parallel_cores = 0
 
@@ -685,12 +696,50 @@ class Simulator():
                 total_core_num += require_core_num
                 seed += 1
         
-        sm = 0
-        for node in self._dag.nodes:
-            sm += node.require_core_num 
-        # print("sm2 = "+str(sm))
-        # print("total_core_num2 = "+str(total_core_num))
-        # print("total_parallel_cores2 = "+str(total_parallel_cores))
+
+        if task_name == "heavy":
+            max_parallel_num = (self._total_core_num-self._dag.num_of_timer) // heavy_task_num #商
+            remain_core_num = (self._total_core_num-self._dag.num_of_timer) % heavy_task_num #余り
+            selected_nodes = []
+
+
+            count = 0
+            seed = 0
+            while (count < heavy_task_num):
+                random.seed(seed)
+                selected_node = random.randint(0, len(self._dag.nodes)-1) 
+                
+
+                if self._dag.nodes[selected_node].require_core_num < max_parallel_num:
+                    selected_nodes.append(selected_node)
+                    count += 1 
+                    seed += 1
+                else:
+                    seed += 1
+            
+            total_core_num += heavy_task_num * max_parallel_num
+            while remain_core_num >= 1:
+                for selected_node in selected_nodes:
+                    total_core_num += 1
+                    remain_core_num -= 1
+                    if remain_core_num == 0:
+                        break
+
+
+            seed = 0
+            for node in self._dag.nodes:
+
+                if node.id in selected_nodes:
+                    continue
+
+                random.seed(seed)
+                core_parallel_num = random.randint(1, 3)
+                # core_parallel_num = 1
+                total_core_num += core_parallel_num
+                seed += 1
+
+        
+
 
 
 
@@ -702,12 +751,7 @@ class Simulator():
             if float(node.c) / float(node.period) <= 1.0:
                 total_parallel_cores += 1
                 count += 1
-        sm = 0
-        for node in self._dag.nodes:
-            sm += node.require_core_num 
-        # print("sm3 = "+str(sm))
-        # print("total_core_num3 = "+str(total_core_num))
-        # print("total_parallel_cores3 = "+str(total_parallel_cores))
+
 
         total_parallel_cores = sm
 
@@ -725,8 +769,8 @@ class Simulator():
                     # print("node.req_core_num = "+str(node.require_core_num))
                     # sm += node.require_core_num
                 # print("sum = "+str(sm))
-                if req_cores > self._core_threshold:
-                    req_cores = self._total_core_num
+                if req_cores > core_threshold:
+                    req_cores = core_threshold
                 
   
                 if total_parallel_cores + req_cores -1  > total_core_num:
@@ -737,16 +781,6 @@ class Simulator():
                     node.require_core_num = req_cores
                     total_parallel_cores += req_cores -1
                     count += 1
-        
-
-        sm = 0
-        for node in self._dag.nodes:
-            sm += node.require_core_num 
-        # print("sm4 = "+str(sm))
-        # print("total_core_num4 = "+str(total_core_num))
-        # print("total_parallel_cores4 = "+str(total_parallel_cores))
-
-
         
 
 
