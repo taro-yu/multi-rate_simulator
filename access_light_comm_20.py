@@ -34,14 +34,15 @@ success_ratios = []
 # methods = ['proposed', 'best']
 
 # methods = ['proposed', 'best', 'EFT', 'greedy', 'kobatomo']
-methods = ['kobatomo', 'EFT']
+# methods = ['kobatomo']
 # methods = ['proposed', 'kobatomo']
-# 
+methods = ['pro_koba']
 deadline_ratios = [0.5, 0.6, 0.7, 0.8]
 cc_time_ratio = 1.0
 sp_node_id = 0
 
-seed = random.randint(0, 100000)
+# seed = random.randint(0, 100000)
+seed = 0
 
 
 # for type in types:

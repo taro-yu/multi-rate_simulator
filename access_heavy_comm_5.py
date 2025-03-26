@@ -7,11 +7,11 @@ from src.access_dag_timer import DAG
 from src.access_simulator import Simulator
 
 import networkx
-import os
+import os, random
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 200
+dag_num = 1
 frag = 0
 firstR_list = []
 R_list = []
@@ -27,17 +27,19 @@ success_ratios = []
 # methods = ['proposed', 'best', 'greedy', 'EFT']
 
 # methods = ['proposed']
-# methods = ['best']
-# # methods = ['greedy']
+methods = ['best']
+# methods = ['greedy']
 # methods = ['proposed', 'best']
 
 # methods = ['proposed', 'best', 'EFT', 'greedy']
-methods = ['kobatomo', 'EFT']
+# methods = ['kobatomo']
+# methods = ['pro_koba']
 # methods = ['kobatomo', 'proposed']
 
 deadline_ratios = [0.5, 0.6, 0.7, 0.8]
 cc_time_ratio = 1.0
 sp_node_id = 0
+# seed = random.randint(0, 100000)
 seed = 0
 
 
@@ -55,12 +57,13 @@ seed = 0
 
 
 deadline_ratio = 0.5
-cluster_nums = [5]
-cluster_total_cores = [80, 120, 160]
+cluster_nums = [8]
+cluster_total_cores = [80]
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'result/access_heavy_comm_{method_name}_5.txt', 'w') as f:
+    # with open(f'result/access_heavy_comm_{method_name}_5.txt', 'w') as f:
+    with open(f'resulttest.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -73,11 +76,11 @@ for method_name in methods:
                 ave_success_ratio = []
                 ave_intra_per_costs = []
                 ave_intra_occur_nums = []
-                for heavy_task_num in range(2, 7, 1):
+                for heavy_task_num in range(4, 5, 1):
                     for n in range(dag_num):
                         # print(n)
                         print("\rheavy: evaluated "+str(method_name)+" heavy_task_num = "+str(heavy_task_num)+"  cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
-                        # n=2
+                        n=3
                         current_dir = os.path.dirname(os.path.abspath(__file__))
                         reader = YamlDagReader(current_dir+"/Timer_DAG/DAG80/dag_"+str(n)+".yaml")
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()

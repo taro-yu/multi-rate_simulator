@@ -1,0 +1,6 @@
+test_result_4_EFT_heav_false_10_8_intra=[258.235, 300.055, 343.56, 376.97, 395.885]
+test_result_4_EFT_heavy_false_10_8_inter=[327.275, 331.41, 351.89, 376.89, 385.735]
+test_result_4_EFT_heav_false_10_12_intra=[257.665, 294.615, 343.295, 382.97, 403.42]
+test_result_4_EFT_heavy_false_10_12_inter=[362.335, 365.755, 393.395, 419.27, 426.98]
+test_result_4_EFT_heav_false_10_16_intra=[243.83, 282.65, 335.86, 365.24, 386.555]
+test_result_4_EFT_heavy_false_10_16_inter=[365.64, 374.865, 406.565, 430.965, 435.775]

@@ -1,0 +1,9 @@
+test_result_4_EFT_light_5_16_intra=[293.96666666666664]
+test_result_4_EFT_light_5_16_inter=[225.73333333333332]
+
+test_result_4_EFT_light_5_24_intra=[339.73333333333335]
+test_result_4_EFT_light_5_24_inter=[300.3333333333333]
+
+test_result_4_EFT_light_5_32_intra=[309.3333333333333]
+test_result_4_EFT_light_5_32_inter=[333.26666666666665]
+

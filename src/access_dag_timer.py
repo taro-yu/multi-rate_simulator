@@ -77,20 +77,26 @@ class Node:
         self._finish_time = 0
 
 
+        self._lp_list = []
+        self._hp_list = []
 
-    # def record_finish_time(self, n: int, finish_time):
-    #     """
-    #     n回目の終了時間
-    #     :param n: 起動回数
-    #     :param finish_time: 終了時間
-    #     """
-    #     self._nth_finish[n] = finish_time
 
-    # def get_finish_time(self, n: int | None):
-    #     if n is None:
-    #         return self._nth_finish.values()
-    #     else:
-    #         return self._nth_finish[n]
+
+    @property
+    def lp_list(self):
+        return self._lp_list
+
+    @lp_list.setter
+    def lp_list(self, lp_id: int):
+        self._lp_list.append(lp_id) 
+
+    @property
+    def hp_list(self):
+        return self._hp_list
+
+    @hp_list.setter
+    def hp_list(self, hp_id: int):
+        self._hp_list.append(hp_id) 
 
 
     @property
@@ -648,17 +654,21 @@ class DAG:
     
 
     # 修論用
-    def _high_priorities(self, node: Node) -> list[int]:
+    def _priorities(self, node: Node) -> list[int]:
         hp_list = []
+        lp_list = []
         for nd in self.nodes:
             # ガード節
             if node.id == nd.id:
                 continue
 
             if nd.laxity <= node.laxity:
-                hp_list.append(nd.id)
+                node.hp_list=nd.id
+
+            if nd.laxity > node.laxity:
+                node.lp_list=nd.id
         
-        return hp_list
+        return hp_list, lp_list
     
 
     # 修論用

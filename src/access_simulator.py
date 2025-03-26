@@ -44,7 +44,7 @@ class Simulator():
         #シミュレーション経過時間
         self._sim_time = 0
 
-        # 何でも用
+        # デバッグ何でも用
         self._count = 0
 
         # 修論用
@@ -68,9 +68,9 @@ class Simulator():
         ):
         
 
-        if task_name == "heavy" and self._method_name != "kobatomo":
+        if task_name == "heavy" and self._method_name not in ["kobatomo", "pro_koba"]:
             self._decide_require_core_num_heavy(self._heavy_task_num)
-        elif task_name == "light" and self._method_name != "kobatomo":
+        elif task_name == "light" and self._method_name not in ["kobatomo", "pro_koba"]:
             self._decide_require_core_num_light()
         
         #以下修論用
@@ -82,10 +82,10 @@ class Simulator():
             result = self._core_allocation_by_yutaro()
             if result is False:
                 return False
-        elif task_name == "light" and self._method_name == "kobatomo":
+        elif task_name == "light" and self._method_name in ["kobatomo", "pro_koba"]:
             result = self._core_allocation_by_okamu(task_name, core_threshold=9)
-        elif task_name == "heavy" and self._method_name == "kobatomo":
-            max_parallel_num = (self._total_core_num-self._dag.num_of_timer) // self._heavy_task_num
+        elif task_name == "heavy" and self._method_name in ["kobatomo", "pro_koba"]:
+            max_parallel_num = (self._total_core_num) // self._heavy_task_num
             result = self._core_allocation_by_okamu(task_name, core_threshold=max_parallel_num)
         
         self._simulator(self._method_name, task_name)
@@ -100,21 +100,15 @@ class Simulator():
         method_name,
         task_name: str
     ):
+        self._count = 0
         HP = self._dag._calc_HP()
         self._dag._allocate_period_from_src()
         cluster_selector = ClusterSlectionMethods(self._kobatomo_seed)
 
-        
+        for node in self._dag.nodes:
+            self._dag._priorities(node)
 
 
-
-        # print(HP)
-
-        # total = 0
-        # for id in self._largest_path:
-        #     total += self._dag.nodes[id].require_core_num
-        #     print("id = "+str(id)+", req = "+str(self._dag.nodes[id].require_core_num))
-        # print("total = "+str(total))
         
         # タイマーノードを一か所に集めておく+初めに実行できるジョブを生成
         for node in self._dag.nodes:
@@ -191,6 +185,10 @@ class Simulator():
                     # print("req="+str(wait_job.require_core_num)+"sum = "+str(sum(self._cluster_remain_cores)))
                     break
                 else:
+                    if wait_job.require_core_num >= 16:
+                        self._count += 1
+                    # print("req="+str(wait_job.require_core_num))
+                    # print("before_cores="+str(self._cluster_remain_cores))
                     selected_clusters = cluster_selector.select_clusters( # 別ファイルで定義
                                                             self._dag,
                                                             wait_job.id,
@@ -199,8 +197,7 @@ class Simulator():
                                                             self._cluster_remain_available,
                                                             method_name
                                                         ) 
-                    assert selected_clusters != None
-
+                                  
                     allocate_count = 0
                     for cluster_id in selected_clusters:
                         for cluster_core_id, core_flag in enumerate(self._cluster_remain_available[cluster_id]):
@@ -212,7 +209,8 @@ class Simulator():
                                 self._cluster_remain_cores[cluster_id] -= 1
                                 self._cluster_remain_available[cluster_id][cluster_core_id] = False
                                 allocate_count += 1
-                    # # 並列処理によるwcetの変化
+                    
+                    # 並列処理によるwcetの変化
                     if len(wait_job.core) >= 2:
                         self._new_wcet(wait_job)
                     # print("after_cores="+str(self._cluster_remain_cores))
@@ -232,8 +230,6 @@ class Simulator():
 
                     
                                          
-
-                    # print("new_ex_job.laxity = "+str(wait_job.laxity))
                     wait_to_ex_job += 1
             # wait_queueから実行された分をwait_queueから削除
             for n in range(wait_to_ex_job):
@@ -248,8 +244,6 @@ class Simulator():
                     ex_job.finish = True
                 else:
                     ex_job.c = -1
-        # print("count = "+str(self._count))
-        # print(self._response_times)
 
     def _release_cores(self, ex_job: Node):
         self._dag.nodes[ex_job.id].allocated_cores_clear()
@@ -478,8 +472,8 @@ class Simulator():
     #均等に分けられない場合（余りが出る場合）、余った分を一つづつ選ばれたタスクに追加していく
     #例：72コアを5つのタスクに割り当てる場合、[16, 16, 15, 15, 15]となる
     def _decide_require_core_num_heavy(self, heavy_task_num):
-        max_parallel_num = (self._total_core_num-self._dag.num_of_timer) // heavy_task_num #商
-        remain_core_num = (self._total_core_num-self._dag.num_of_timer) % heavy_task_num #余り
+        max_parallel_num = (self._total_core_num) // heavy_task_num #商
+        remain_core_num = (self._total_core_num) % heavy_task_num #余り
         selected_nodes = []
 
         count = 0
@@ -586,13 +580,13 @@ class Simulator():
             # print("total_parallel_cores = "+str(total_parallel_cores))
             while max_id is None:
                 max_path = self._req_max_path(nth_path)
-                # print(max_path)
                 max_wcrt = -1
+
                 if max_path is None:
                     print("Error")
                 else:
                     for id in max_path:
-                        wcrt = self._calc_node_wcrt(self._dag.nodes[id])
+                        wcrt = self._dag.nodes[id].wcrt
                         if wcrt > max_wcrt and self._dag.nodes[id].require_core_num < core_threshold:
                             max_wcrt = wcrt
                             max_id = id
@@ -698,8 +692,8 @@ class Simulator():
         
 
         if task_name == "heavy":
-            max_parallel_num = (self._total_core_num-self._dag.num_of_timer) // heavy_task_num #商
-            remain_core_num = (self._total_core_num-self._dag.num_of_timer) % heavy_task_num #余り
+            max_parallel_num = (self._total_core_num) // heavy_task_num #商
+            remain_core_num = (self._total_core_num) % heavy_task_num #余り
             selected_nodes = []
 
 
@@ -836,8 +830,10 @@ class Simulator():
 
     
     def _calc_node_wcrt(self, node: Node):
-        hp_list = self._dag._high_priorities(node)
-        lp_list = self._dag._low_priorities(node)
+        hp_list = node.hp_list
+        lp_list = node.lp_list
+        # lp_list = self._dag._priorities(node)
+        # lp_list = self._dag._low_priorities(node)
 
         # bi (: nodeより優先度が低いタスクの中で最も大きいC^n)を求める
         bi_max = 0
@@ -864,7 +860,7 @@ class Simulator():
                 hp_wcet_n = self._dag.nodes[hp_id].c
             hp_period = self._dag.nodes[hp_id].period
             for n in range(math.ceil(node.period / hp_period)):
-                if node.laxity < self._dag.nodes[hp_id].laxity + (n-1) * hp_period:
+                if node.laxity < self._dag.nodes[hp_id].laxity + n * hp_period:
                     break
                 else:
                     total_hp_delay += hp_wcet_n
@@ -910,6 +906,11 @@ class Simulator():
         length = 0
         path_sums = []
         max_respo_chain = []
+
+        #各ノードのWCRTを計算
+        for node in self._dag.nodes:
+            _ = self._calc_node_wcrt(node)
+
         for s in self._dag.src:
             for d in self._dag.snk:
                 for path in list(networkx.all_simple_paths(self._dag.G, s, d)):
@@ -919,7 +920,7 @@ class Simulator():
                     # print("s = "+str(s)+"d = "+str(d))
                     tmp_length = 0
                     for i in path:
-                        wcrt_i = self._calc_node_wcrt(self._dag.nodes[i])
+                        wcrt_i = self._dag.nodes[i].wcrt
                         # print(wcrt_i)
                         if self._dag.nodes[i].trigger_edge in path:
                             period_i = self._dag.nodes[i].period

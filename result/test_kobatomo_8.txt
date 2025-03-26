@@ -1,0 +1,2 @@
+test_result_4_kobatomo_heav_false_10_8_intra=[178.0]
+test_result_4_kobatomo_heavy_false_10_8_inter=[155.0]

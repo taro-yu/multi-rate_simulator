@@ -1,0 +1,6 @@
+test_result_4_pro_koba_heav_false_8_10_intra=[78.27, 93.405, 91.475, 114.79, 129.23]
+test_result_4_pro_koba_heavy_false_8_10_inter=[155.06, 195.78, 213.37, 237.25, 256.32]
+test_result_4_pro_koba_heav_false_8_15_intra=[67.33, 83.955, 80.455, 99.705, 115.4]
+test_result_4_pro_koba_heavy_false_8_15_inter=[143.185, 194.73, 210.455, 244.69, 263.62]
+test_result_4_pro_koba_heav_false_8_20_intra=[70.89, 75.8, 72.105, 90.045, 104.855]
+test_result_4_pro_koba_heavy_false_8_20_inter=[144.19, 182.715, 197.92, 237.57, 260.465]

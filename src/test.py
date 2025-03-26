@@ -1,4 +1,5 @@
-a = 2.34567
-b = 1.23456
+import random 
 
-print(a-b)
+random.seed(0)
+seed = random.randint(0, 100000)
+print(seed)

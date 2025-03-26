@@ -1,0 +1,9 @@
+test_result_4_pro_koba_light_20_4_intra=[323.045, 338.565, 389.15, 419.665, 456.73]
+test_result_4_pro_koba_light_20_4_inter=[203.19, 227.51, 261.8, 270.015, 303.125]
+
+test_result_4_pro_koba_light_20_6_intra=[214.315, 276.835, 334.57, 338.03, 375.885]
+test_result_4_pro_koba_light_20_6_inter=[228.93, 298.51, 364.19, 364.37, 418.815]
+
+test_result_4_pro_koba_light_20_8_intra=[199.585, 267.185, 352.885, 378.615, 437.815]
+test_result_4_pro_koba_light_20_8_inter=[237.4, 332.62, 436.89, 452.455, 538.81]
+

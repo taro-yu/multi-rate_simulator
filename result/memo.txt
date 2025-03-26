@@ -10,3 +10,15 @@ python3 access_heavy_comm_5.py
 python3 access_heavy_comm_8.py
 python3 access_heavy_comm_10.py
 python3 access_heavy_comm_20.py
+
+
+#respo
+python3 access_light_respo_5.py
+python3 access_light_respo_8.py
+python3 access_light_respo_10.py
+python3 access_light_respo_20.py
+
+python3 access_heavy_respo_5.py
+python3 access_heavy_respo_8.py
+python3 access_heavy_respo_10.py
+python3 access_heavy_respo_20.py

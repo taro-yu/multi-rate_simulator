@@ -35,7 +35,7 @@ class ClusterSlectionMethods():
             cluster_remain_available
         ]
 
-        if method_name == 'proposed':
+        if method_name == 'proposed' or method_name == 'pro_koba':
             return self._proposed_method(parameters)
         elif method_name == 'greedy':
             return self._greedy_fit(parameters)
@@ -259,6 +259,7 @@ class ClusterSlectionMethods():
             cluster_remain_cores_copy = copy.deepcopy(cluster_remain_cores)
             total_core_num = 0
             selected_cluster_ids = []
+            self._seed_for_kobatomo_fit += 1
             
             while total_core_num < require_core_num:
                 random.seed(self._seed_for_kobatomo_fit)

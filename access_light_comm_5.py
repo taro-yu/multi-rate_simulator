@@ -5,6 +5,7 @@ from src.yaml_dag_reader import YamlDagReader
 from src.access_dag_timer import DAG
 
 from src.access_simulator import Simulator
+# from src.access_simulator_not_threshold import Simulator
 import random
 
 
@@ -13,7 +14,7 @@ import networkx
 
 # read node, edge, deadline from yaml
 a = 0
-dag_num = 200
+dag_num = 1
 frag = 0
 firstR_list = []
 R_list = []
@@ -34,14 +35,17 @@ success_ratios = []
 # methods = ['proposed', 'best']
 
 # methods = ['proposed', 'best', 'EFT', 'greedy', 'kobatomo']
-methods = ['kobatomo', 'EFT']
+methods = ['kobatomo']
 # methods = ['proposed', 'kobatomo']
+methods = ['pro_koba']
+methods = ['proposed']
 # 
 deadline_ratios = [0.5, 0.6, 0.7, 0.8]
 cc_time_ratio = 1.0
 sp_node_id = 0
 
-seed = random.randint(0, 100000)
+# seed = random.randint(0, 100000)
+seed = 0
 
 
 # for type in types:
@@ -61,12 +65,13 @@ deadline_ratio = 0.5
 # cluster_nums = [5, 8, 10, 20]
 # cluster_total_cores = [80, 120, 160]
 cluster_nums = [5]
-cluster_total_cores = [80, 120, 160]
+cluster_total_cores = [160]
 
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'result/access_light_comm_{method_name}_5.txt', 'w') as f:
+    # with open(f'result/access_light_comm_{method_name}_5.txt', 'w') as f:
+    with open(f'result/test.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -77,7 +82,7 @@ for method_name in methods:
                 success_flags = []
                 ave_list_respo = []
                 ave_success_ratio = []
-                for m in range(40, 121, 20):
+                for m in range(100, 101, 20):
                     for n in range(dag_num):
                         # print(n)
                         print("\rlight_false: evaluated "+str(method_name)+" taskset : "+str(m)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")

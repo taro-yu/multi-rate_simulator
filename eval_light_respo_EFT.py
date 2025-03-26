@@ -7,7 +7,7 @@ from src.dag_timer import DAG
 from src.simulator import Simulator
 
 
-
+import os, random
 import networkx
 
 # read node, edge, deadline from yaml
@@ -39,6 +39,8 @@ deadline_ratios = [0.5, 0.6, 0.7, 0.8]
 cc_time_ratio = 1.0
 sp_node_id = 0
 
+seed = random.randint(0, 100000)
+
 
 # for type in types:
 #     if type == 'proposed':
@@ -59,7 +61,7 @@ cluster_total_cores = [80, 120, 160]
 
 for method_name in methods:
     #クラスタ数とトータルコア数を固定
-    with open(f'result/reso_light_{method_name}.txt', 'w') as f:
+    with open(f'result/respo_light_{method_name}.txt', 'w') as f:
         for cluster_num in cluster_nums:
             for cluster_total_core in cluster_total_cores:
                 # cluster_num = 5
@@ -77,7 +79,9 @@ for method_name in methods:
                         # print(n)
                         print("\rlight_respo: evaluated "+str(method_name)+" cluster_comm_ration : "+str(cluster_comm_ratio)+" DAG, cluster_num="+str(cluster_num)+", total_core="+str(cluster_total_core)+", task num="+str(n)+ "  ",end="")
                         # n=21
-                        reader = YamlDagReader("/home/yutaro/wd/multi-rate_simulator/Timer_DAG/DAG80/dag_"+str(n)+".yaml")
+                        current_dir = os.path.dirname(os.path.abspath(__file__))
+                        reader = YamlDagReader(current_dir+"/Timer_DAG/DAG"+str(m)+"/dag_"+str(n)+".yaml")
+
                         wcets, edges, deadline, k_parallel, index, periods, seeds = reader.read()
 
                         # make dag from wcets, edges, deadline
@@ -88,7 +92,8 @@ for method_name in methods:
                         # cluster_num = 5
                         # cluster_core_num = 16
                         # deadline_ratio = 0.8
-                        simulator = Simulator(dag, cluster_num, cluster_core_num, cluster_comm_ratio, method_name)
+                        seed += 1
+                        simulator = Simulator(dag, cluster_num, cluster_core_num, cluster_comm_ratio, method_name, seed=seed)
                         ave_response_time = simulator.Scheduling(task_name="light")
 
                         # scheduler = Scheduler2(dag, cluster_num, cluster_core_num, sp_node_id, deadline_ratio, cc_time_ratio, heavy_task_num=4, consider_compute_core=True)
@@ -165,5 +170,5 @@ for method_name in methods:
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_inter={ave_list_inter}\n")
                 # f.write(f"test_result_4_{method}_light_false_{cluster_num}_{cluster_core_num}_success_ratio={ave_list_respo}\n\n")
                 f.write(f"respo_{method_name}_light_{cluster_num}_{cluster_core_num}_respo_ave={ave_list_respo}\n")
-                f.write(f"respo_{method_name}_light_{cluster_num}_{cluster_core_num}_max_respo={max_response_times}\n\n")
+                # f.write(f"respo_{method_name}_light_{cluster_num}_{cluster_core_num}_max_respo={max_response_times}\n\n")
 

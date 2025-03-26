@@ -1,0 +1,6 @@
+test_result_4_kobatomo_heav_false_20_4_intra=[243.895, 303.02, 343.34, 394.175, 435.035]
+test_result_4_kobatomo_heavy_false_20_4_inter=[222.405, 249.26, 270.94, 288.95, 307.69]
+test_result_4_kobatomo_heav_false_20_6_intra=[215.005, 285.255, 346.75, 399.905, 450.295]
+test_result_4_kobatomo_heavy_false_20_6_inter=[246.835, 282.95, 309.35, 328.68, 348.695]
+test_result_4_kobatomo_heav_false_20_8_intra=[223.92, 271.905, 344.425, 398.045, 454.795]
+test_result_4_kobatomo_heavy_false_20_8_inter=[268.625, 312.105, 336.715, 356.24, 378.285]

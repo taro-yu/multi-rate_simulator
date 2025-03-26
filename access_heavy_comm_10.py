@@ -7,7 +7,7 @@ from src.access_dag_timer import DAG
 from src.access_simulator import Simulator
 
 
-import os
+import os, random
 import networkx
 
 # read node, edge, deadline from yaml
@@ -33,14 +33,15 @@ success_ratios = []
 # methods = ['proposed', 'best']
 
 # methods = ['proposed', 'best', 'EFT', 'greedy']
-methods = ['kobatomo', 'EFT']
+# methods = ['kobatomo']
+methods = ['pro_koba']
 # methods = ['kobatomo', 'proposed']
 
 deadline_ratios = [0.5, 0.6, 0.7, 0.8]
 cc_time_ratio = 1.0
 sp_node_id = 0
+# seed = random.randint(0, 100000)
 seed = 0
-
 
 # for type in types:
 #     if type == 'proposed':
