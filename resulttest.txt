@@ -1,2 +1,0 @@
-test_result_4_best_heav_false_8_10_intra=[94.0]
-test_result_4_best_heavy_false_8_10_inter=[200.0]
