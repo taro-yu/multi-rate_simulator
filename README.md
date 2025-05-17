@@ -33,6 +33,7 @@ DAGクラスとNODEクラスを定義している。
 - cluster_nums
 - cluster_total_cores
 - methods
+
 を調整することで、一ファイルですべての評価を取ることも可能。逆にこれらを分割することで、複数ファイルで評価を行うことも可能。
 
 ## access_light_comm_n.py
@@ -45,6 +46,7 @@ access_heavy_comm_n.pyを少しだけいじって作っているため、中身�
 - cluster_nums
 - cluster_total_cores
 - methods
+
 を修正することで調整可能。
 
 ## access_light_respo_n.py
