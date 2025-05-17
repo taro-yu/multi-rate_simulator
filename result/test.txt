@@ -1,3 +1,0 @@
-test_result_4_proposed_light_5_32_intra=[418.0]
-test_result_4_proposed_light_5_32_inter=[912.0]
-
