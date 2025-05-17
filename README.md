@@ -7,10 +7,11 @@ DAGクラスとNODEクラスを定義している。
 スケジューリングシミュレータのコード。
 
 
-## access_simulator_not_threshold.py.py
+## access_simulator_not_threshold.py
 WCMで一ノード当たりの割り当てコア数にしきい値なし場合のシミュレータコード。　
 access_simulator.pyはしきい値が与えられている。
-基本的に、methods = [pro_koba, kobatomo]の評価を行わない場合には関係ない。
+基本的に、methods = [pro_koba, kobatomo]の評価を行わない場合にはaccess_simulator.pyを使用する。
+評価コード（例えばaccess_heavy_comm_n.py）を使用する際、デフォルトでは from src.access_simulator.pyとなっているため、場合に応じてfrom src.access_simulator_not_threshold.pyに書き換える
 - pro_koba: WCM (kobatomo & okamu, 2025 IEEE Access)で各ノードのコア数決定を行い、クラスタ選択は提案手法を使っている場合
 - kobatomo: WCM (kobatomo & okamu, 2025 IEEE Access)で各ノードのコア数決定を行い、クラスタ選択はランダムで行っている場合
 
